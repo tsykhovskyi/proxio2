@@ -1,0 +1,22 @@
+{
+  "name": "proxio2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node src/index.ts",
+    "test": "npx ts-node src/stream.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ssh2": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.10",
+    "@types/ssh2": "^0.5.49",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.2"
+  }
+}

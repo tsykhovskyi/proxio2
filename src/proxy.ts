@@ -1,10 +1,7 @@
-import http from 'http';
 import Stream from 'stream';
 import { TunnelInterface } from './server';
-import { AddressInfo } from 'net';
 import net from 'net';
-import zlib from 'zlib';
-import { defineStreamHost } from './stream';
+import { defineStreamHost, responseDuplexHandlers } from './stream';
 
 
 export function RunHttpProxy(tunnels: TunnelInterface[]) {
@@ -18,12 +15,20 @@ export function RunHttpProxy(tunnels: TunnelInterface[]) {
     }
 
     defineStreamHost(socket).then((host) => {
-      console.log('\n\nHost defined: ' + host);
-      const t = tunnels[0];
+      if (host === null) {
+        socket.pipe(responseDuplexHandlers.mute()).pipe(socket);
+        return;
+      }
 
-      t.sshConnection.forwardOut(
-        t.bindAddr,
-        t.bindPort,
+      const targetTunnel = tunnels.find(tunnel => tunnel.bindAddr === host);
+      if (targetTunnel === undefined) {
+        socket.pipe(responseDuplexHandlers.tunnelNotFound(host)).pipe(socket);
+        return;
+      }
+
+      targetTunnel.sshConnection.forwardOut(
+        targetTunnel.bindAddr,
+        targetTunnel.bindPort,
         socket.remoteAddress ?? '',
         socket.remotePort ?? 0,
         (err, upstream) => {
@@ -33,8 +38,8 @@ export function RunHttpProxy(tunnels: TunnelInterface[]) {
           }
           socket.pipe(upstream).pipe(socket);
           socket.resume();
-          // socket.pipe(consoleRequest, {end: false});
-          // upstream.pipe(consoleResponse, {end: false});
+          socket.pipe(consoleRequest, {end: false});
+          upstream.pipe(consoleResponse, {end: false});
         });
     })
   })

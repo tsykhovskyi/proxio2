@@ -1,33 +1,8 @@
-import { Readable, Writable, Transform, TransformCallback } from 'stream';
+import { Readable, Duplex } from 'stream';
 import { Buffer } from 'buffer';
 
-const records = [
-  'test1',
-  'test2',
-  'test3',
-  'Host: localhost',
-  'test4',
-  'test5'
-];
-
-const source = new class extends Readable {
-  i: number = -1;
-
-  constructor() {
-    super();
-  }
-
-  _read(size: number) {
-    if (++this.i < records.length) {
-      this.push(records[this.i]);
-      return
-    }
-    this.push(null);
-  }
-};
-
 /**
- * Search for specific chunk in stream. Return stream duplicate
+ * Search for specific chunk in stream. Return original stream.
  */
 function defineStreamCondition(origin: Readable, conditionCb: (chunk: Buffer) => string | null): Promise<string | null> {
   return new Promise((resolve, reject) => {
@@ -59,16 +34,31 @@ function defineStreamCondition(origin: Readable, conditionCb: (chunk: Buffer) =>
 export function defineStreamHost(origin: Readable) {
   return defineStreamCondition(origin, chunk => {
     const payload = Buffer.from(chunk).toString();
-    return validateHttpAndExtractHost(payload);
+
+    const res = new RegExp('^Host: ([a-zA-Z0-9.]+)$', 'm').exec(payload);
+    if (res !== null) {
+      return res[1];
+    }
+
+    return null;
   });
 }
 
-function validateHttpAndExtractHost(payload: string): string | null {
-  const res = new RegExp('^Host: ([a-zA-Z0-9.]+)$', 'm').exec(payload);
-  if (res !== null) {
-    return res[1];
-  }
+export const responseDuplexHandlers = {
+  mute: () => new Duplex(),
+  tunnelNotFound: (attemptedTunnelName: string) => new Duplex({
+    read(size: number) {
+      this.push(`HTTP/1.1 404 Not Found
+Host: localhost
+Connection: close
+Content-type: text/html; charset=UTF-8
 
-  return null;
+<h1>Tunnel not found</h1>
+<span>Tunnel for host <b style="color: darkred">${attemptedTunnelName}</b> not found.</span>      
+      `);
+      this.push(null);
+    },
+    write(chunk: any, encoding: BufferEncoding, callback: (error?: (Error | null)) => void) {
+    }
+  })
 }
-

@@ -13,14 +13,12 @@ export interface TunnelInterface {
    */
   bindPort: number;
 
+  /**
+   *
+   */
   sshConnection: Connection;
 }
 
-
-class Tunnel implements TunnelInterface {
-  constructor(public bindAddr: string, public bindPort: number, public sshConnection: Connection) {
-  }
-}
 
 export function RunSshServer() {
   const tunnels: TunnelInterface[] = [];
@@ -78,7 +76,7 @@ export function RunSshServer() {
             return;
           }
 
-          tunnels.push(new Tunnel(info.bindAddr, info.bindPort, client));
+          tunnels.push({bindAddr: info.bindAddr, bindPort: info.bindPort, sshConnection: client});
 
           accept();
           return

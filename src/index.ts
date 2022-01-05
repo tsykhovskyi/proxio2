@@ -1,6 +1,14 @@
-import { RunSshServer } from './server';
-import { RunHttpProxy } from './proxy';
+import { SshServer, SshServerInterface } from './ssh/server';
+import { ProxyServer } from './proxy/proxy';
 
-const tunnels = RunSshServer();
+const sshServer: SshServerInterface = new SshServer()
+const proxyServer = new ProxyServer();
 
-RunHttpProxy(tunnels);
+sshServer.on('tunnel-requested', (tunnel, accept, reject) => {
+  // todo validate tunnels
+  proxyServer.addTunnel(tunnel);
+  accept();
+});
+
+sshServer.run();
+proxyServer.run();

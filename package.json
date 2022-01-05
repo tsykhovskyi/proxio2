@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npx ts-node src/index.ts",
-    "test": "npx ts-node src/stream.ts"
+    "test": "npx ts-node src/proxy/stream.ts"
   },
   "keywords": [],
   "author": "",

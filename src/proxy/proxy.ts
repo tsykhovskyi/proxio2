@@ -1,6 +1,7 @@
 import { TunnelInterface } from '../ssh/server';
 import { defineStreamHost, responseDuplexHandlers } from './stream';
 import { Server, createServer } from 'net';
+import { log } from '../helper/logger';
 
 export class ProxyServer {
   private sshTunnels: TunnelInterface[] = [];
@@ -15,12 +16,18 @@ export class ProxyServer {
   }
 
   run() {
+    let counter = 0;
     this.server.on('connection', socket => {
       if (socket.remoteAddress === undefined || socket.remotePort === undefined) {
         return socket.end();
       }
+      socket[Symbol.for('socket')] = counter++;
+      log('socket opened', socket[Symbol.for('socket')])
+      defineStreamHost(socket).then(({host, stream}) => {
+        if (!socket.readable) {
+          return;
+        }
 
-      defineStreamHost(socket).then((host) => {
         if (host === null) {
           socket.pipe(responseDuplexHandlers.mute()).pipe(socket);
           return;
@@ -32,20 +39,19 @@ export class ProxyServer {
           return;
         }
 
+        log('forwarding traffic...', socket[Symbol.for('socket')])
         targetTunnel.sshConnection.forwardOut(
           targetTunnel.bindAddr,
           targetTunnel.bindPort,
           socket.remoteAddress ?? '',
           socket.remotePort ?? 0,
-          (err, upstream) => {
+          (err, sshChannel) => {
             if (err) {
-              socket.end();
+              stream.end();
               return console.error('not working: ' + err);
             }
-            socket.pipe(upstream).pipe(socket);
-            socket.on('close', () => upstream.close());
-            upstream.on('close', () => socket.end());
-            socket.resume();
+            stream.pipe(sshChannel).pipe(stream);
+            // socket.resume();
             // socket.pipe(consoleRequest, {end: false});
             // upstream.pipe(consoleResponse, {end: false});
           });

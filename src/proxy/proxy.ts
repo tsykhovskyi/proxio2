@@ -2,6 +2,8 @@ import { TunnelInterface } from '../ssh/server';
 import { defineStreamHost, responseDuplexHandlers } from './stream';
 import { Server, createServer } from 'net';
 import { log } from '../helper/logger';
+import { DuplexReadableSearcher } from './stream/duplex-readable-searcher';
+import { hostSearcher } from './stream/host-searcher';
 
 export class ProxyServer {
   private sshTunnels: TunnelInterface[] = [];
@@ -17,45 +19,43 @@ export class ProxyServer {
 
   run() {
     let counter = 0;
-    this.server.on('connection', socket => {
+    this.server.on('connection', async socket => {
       if (socket.remoteAddress === undefined || socket.remotePort === undefined) {
         return socket.end();
       }
       socket[Symbol.for('socket')] = counter++;
-      log('socket opened', socket[Symbol.for('socket')])
-      defineStreamHost(socket).then(({host, stream}) => {
-        if (!socket.readable) {
-          return;
-        }
+      log('socket opened', socket[Symbol.for('socket')]);
 
-        if (host === null) {
-          socket.pipe(responseDuplexHandlers.mute()).pipe(socket);
-          return;
-        }
+      const searchableSocket = new DuplexReadableSearcher(socket, hostSearcher);
+      const host = await searchableSocket.target;
+      console.log('Host is found: ', host);
 
-        const targetTunnel = this.sshTunnels.find(tunnel => tunnel.bindAddr === host);
-        if (targetTunnel === undefined) {
-          socket.pipe(responseDuplexHandlers.tunnelNotFound(host)).pipe(socket);
-          return;
-        }
+      if (host === null) {
+        socket.pipe(responseDuplexHandlers.mute()).pipe(socket);
+        return;
+      }
 
-        log('forwarding traffic...', socket[Symbol.for('socket')])
-        targetTunnel.sshConnection.forwardOut(
-          targetTunnel.bindAddr,
-          targetTunnel.bindPort,
-          socket.remoteAddress ?? '',
-          socket.remotePort ?? 0,
-          (err, sshChannel) => {
-            if (err) {
-              stream.end();
-              return console.error('not working: ' + err);
-            }
-            stream.pipe(sshChannel).pipe(stream);
-            // socket.resume();
-            // socket.pipe(consoleRequest, {end: false});
-            // upstream.pipe(consoleResponse, {end: false});
-          });
-      })
+      const targetTunnel = this.sshTunnels.find(tunnel => tunnel.bindAddr === host);
+      if (targetTunnel === undefined) {
+        socket.pipe(responseDuplexHandlers.tunnelNotFound(host)).pipe(socket);
+        return;
+      }
+
+      log('forwarding traffic...', socket[Symbol.for('socket')])
+      targetTunnel.sshConnection.forwardOut(
+        targetTunnel.bindAddr,
+        targetTunnel.bindPort,
+        socket.remoteAddress ?? '',
+        socket.remotePort ?? 0,
+        (err, sshChannel) => {
+          if (err) {
+            searchableSocket.end();
+            return console.error('not working: ' + err);
+          }
+          searchableSocket.pipe(sshChannel).pipe(searchableSocket);
+          // socket.pipe(consoleRequest, {end: false});
+          // upstream.pipe(consoleResponse, {end: false});
+        });
     })
     this.server.listen(80);
   }

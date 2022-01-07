@@ -1,19 +1,8 @@
 import { Duplex } from 'stream';
 import { DuplexReadableSearcher } from './stream/duplex-readable-searcher';
 
-export function defineStreamHost(origin: Duplex): Promise<{ host: string, stream: DuplexReadableSearcher }> {
+export function defineStreamHost(origin: Duplex): Promise<{ host: string, stream: DuplexReadableSearcher<string> }> {
   return new Promise(resolve => resolve({host: 'localhost', stream: new DuplexReadableSearcher(origin, () => '')}))
-
-  // return defineStreamCondition(origin, chunk => {
-  //   const payload = Buffer.from(chunk).toString();
-  //
-  //   const res = new RegExp('^Host: ([a-zA-Z0-9.]+)$', 'm').exec(payload);
-  //   if (res !== null) {
-  //     return res[1];
-  //   }
-  //
-  //   return null;
-  // });
 }
 
 export const responseDuplexHandlers = {

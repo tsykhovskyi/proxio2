@@ -1,23 +1,8 @@
-import { Connection, Server } from "ssh2";
+import { Server } from "ssh2";
 import path from "path";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
-
-export interface TunnelInterface {
-  /**
-   * address requested by user as a proxy
-   */
-  bindAddr: string;
-  /**
-   * proxy port requested by user
-   */
-  bindPort: number;
-
-  /**
-   *
-   */
-  sshConnection: Connection;
-}
+import { TunnelInterface } from "../proxy/tunnel-storage";
 
 export interface SshServerInterface {
   run(): void;
@@ -108,7 +93,6 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             () => accept(),
             () => reject()
           );
-          return;
         } else {
           reject();
         }

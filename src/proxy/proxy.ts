@@ -1,24 +1,44 @@
-import { TunnelInterface } from "../ssh/server";
-import { emptyResponse, mutualPipe, proxyNotFoundResponse } from "./stream";
+import {
+  emptyResponse,
+  httpProxyNotFoundResponse,
+  mutualPipe,
+  remoteHostIsUnreachableResponse,
+} from "./stream";
 import { createServer, Server } from "net";
 import { DuplexReadableSearcher } from "./stream/duplex-readable-searcher";
 import { hostSearcher } from "./stream/host-searcher";
 import { log } from "../helper/logger";
+import { TunnelInterface, TunnelStorage } from "./tunnel-storage";
+import { Duplex } from "stream";
 
 export class ProxyServer {
-  private sshTunnels: TunnelInterface[] = [];
-  private server: Server;
+  private servers = new Map<number, Server>();
+  private tunnelStorage: TunnelStorage;
 
   constructor() {
-    this.server = createServer();
+    this.tunnelStorage = new TunnelStorage();
   }
 
-  addTunnel(tunnel: TunnelInterface) {
-    this.sshTunnels.push(tunnel);
+  addTunnel(tunnel: TunnelInterface): boolean {
+    if (tunnel.bindPort !== 80) {
+      this.runTcpServer(tunnel.bindPort);
+    }
+    return this.tunnelStorage.add(tunnel);
   }
 
   run() {
-    this.server.on("connection", async (socket) => {
+    this.runHttpServer();
+  }
+
+  stop() {
+    for (const server of this.servers.values()) {
+      server.close();
+    }
+  }
+
+  private runHttpServer() {
+    const httpServer = createServer();
+    httpServer.on("connection", async (socket) => {
       const { remoteAddress, remotePort } = socket;
       if (remoteAddress == undefined || remotePort == undefined) {
         return socket.end();
@@ -33,34 +53,75 @@ export class ProxyServer {
         return;
       }
 
-      const targetTunnel = this.sshTunnels.find(
-        (tunnel) => tunnel.bindAddr === host
-      );
-      if (targetTunnel === undefined) {
-        mutualPipe(searchableSocket, proxyNotFoundResponse(host));
+      const targetTunnel = this.tunnelStorage.find(host, 80);
+      if (targetTunnel === null) {
+        mutualPipe(searchableSocket, httpProxyNotFoundResponse(host));
         return;
       }
 
-      targetTunnel.sshConnection.forwardOut(
-        targetTunnel.bindAddr,
-        targetTunnel.bindPort,
+      this.forwardTraffic(
+        searchableSocket,
+        targetTunnel,
         remoteAddress,
         remotePort,
-        (err, sshChannel) => {
-          if (err) {
-            searchableSocket.end();
-            return console.error("not working: " + err);
-          }
-          mutualPipe(searchableSocket, sshChannel);
-          // socket.pipe(consoleRequest, {end: false});
-          // upstream.pipe(consoleResponse, {end: false});
-        }
+        (err) => remoteHostIsUnreachableResponse(host, err)
       );
     });
-    this.server.listen(80);
+
+    this.servers.set(80, httpServer);
+    httpServer.listen(80, () => console.log("Proxy port 80 is listening..."));
   }
 
-  stop() {
-    this.server.close();
+  private runTcpServer(bindPort: number) {
+    if (this.servers.has(bindPort)) {
+      return;
+    }
+
+    const tcpServer = createServer();
+    tcpServer.on("connection", (socket) => {
+      const { remoteAddress, remotePort } = socket;
+      if (remoteAddress == undefined || remotePort == undefined) {
+        return socket.end();
+      }
+      const targetTunnel = this.tunnelStorage.find(null, bindPort);
+      if (targetTunnel === null) {
+        return socket.end();
+      }
+
+      this.forwardTraffic(socket, targetTunnel, remoteAddress, remotePort, () =>
+        emptyResponse()
+      );
+    });
+
+    this.servers.set(bindPort, tcpServer);
+    tcpServer.listen(bindPort, () =>
+      console.log(`Proxy port ${bindPort} is listening...`)
+    );
+  }
+
+  private forwardTraffic(
+    socket: Duplex,
+    tunnel: TunnelInterface,
+    remoteAddress: string,
+    remotePort: number,
+    errorCb: (error: Error) => Duplex
+  ) {
+    tunnel.sshConnection.forwardOut(
+      tunnel.bindAddr,
+      tunnel.bindPort,
+      remoteAddress,
+      remotePort,
+      (err, sshChannel) => {
+        if (err) {
+          const forwardErrorResponse = errorCb(err);
+          mutualPipe(socket, forwardErrorResponse);
+          // socket.end();
+          return;
+        }
+        mutualPipe(socket, sshChannel);
+        // socket.pipe(consoleRequest, {end: false});
+        // upstream.pipe(consoleResponse, {end: false});
+      }
+    );
   }
 }

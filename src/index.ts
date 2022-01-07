@@ -6,8 +6,11 @@ const proxyServer = new ProxyServer();
 
 sshServer.on("tunnel-requested", (tunnel, accept, reject) => {
   // todo validate tunnels
-  proxyServer.addTunnel(tunnel);
-  accept();
+  if (proxyServer.addTunnel(tunnel)) {
+    accept();
+  } else {
+    reject();
+  }
 });
 
 sshServer.run();

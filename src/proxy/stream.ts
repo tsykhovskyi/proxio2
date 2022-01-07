@@ -4,7 +4,7 @@ export function emptyResponse() {
   return httpResponseStream();
 }
 
-export function proxyNotFoundResponse(expectedTunnelName: string) {
+export function httpProxyNotFoundResponse(expectedTunnelName: string) {
   return httpResponseStream(`
 HTTP/1.1 404 Not Found
 Host: ${expectedTunnelName}
@@ -12,7 +12,23 @@ Connection: close
 Content-type: text/html; charset=UTF-8
 
 <h1>Tunnel not found</h1>
-<span>Tunnel for host <b style="color: darkred">${expectedTunnelName}</b> not found.</span>
+<p>Tunnel for host <b style="color: darkred">${expectedTunnelName}</b> not found.</p>
+  `);
+}
+
+export function remoteHostIsUnreachableResponse(
+  expectedTunnelName: string,
+  err: Error
+) {
+  return httpResponseStream(`
+HTTP/1.1 504 Bad Gateway
+Host: ${expectedTunnelName}
+Connection: close
+Content-type: text/html; charset=UTF-8
+
+<h1>Tunnel destination is unreachable</h1>
+<p>Unable to reach destination service.</p>
+<p style="color: darkred">${err}</p>
   `);
 }
 

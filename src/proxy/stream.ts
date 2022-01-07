@@ -1,4 +1,4 @@
-import { Duplex } from 'stream';
+import { Duplex } from "stream";
 
 export function emptyResponse() {
   return httpResponseStream();
@@ -7,12 +7,12 @@ export function emptyResponse() {
 export function proxyNotFoundResponse(expectedTunnelName: string) {
   return httpResponseStream(`
 HTTP/1.1 404 Not Found
-Host: ${ expectedTunnelName }
+Host: ${expectedTunnelName}
 Connection: close
 Content-type: text/html; charset=UTF-8
 
 <h1>Tunnel not found</h1>
-<span>Tunnel for host <b style="color: darkred">${ expectedTunnelName }</b> not found.</span>
+<span>Tunnel for host <b style="color: darkred">${expectedTunnelName}</b> not found.</span>
   `);
 }
 
@@ -24,9 +24,13 @@ function httpResponseStream(response?: string): Duplex {
       }
       this.push(null);
     },
-    write(chunk: any, encoding: BufferEncoding, callback: (error?: (Error | null)) => void) {
+    write(
+      chunk: any,
+      encoding: BufferEncoding,
+      callback: (error?: Error | null) => void
+    ) {
       return null;
-    }
+    },
   });
 }
 

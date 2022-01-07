@@ -1,5 +1,5 @@
-import { Duplex } from 'stream';
-import { Buffer } from 'buffer';
+import { Duplex } from "stream";
+import { Buffer } from "buffer";
 
 type BufferSearcher<T> = (chunk: Uint8Array) => T | null;
 
@@ -17,15 +17,20 @@ export class DuplexReadableSearcher<T> extends Duplex {
   private buffer: Buffer[] = [];
   private targetFulfilled = false;
 
-  constructor(private origin: Duplex, private readStreamChecker: BufferSearcher<T>) {
+  constructor(
+    private origin: Duplex,
+    private readStreamChecker: BufferSearcher<T>
+  ) {
     super();
-    this.target = new Promise<T | null>(resolve => this.targetResolve = resolve);
-    this.target.then(() => this.targetFulfilled = true);
+    this.target = new Promise<T | null>(
+      (resolve) => (this.targetResolve = resolve)
+    );
+    this.target.then(() => (this.targetFulfilled = true));
   }
 
-  _construct(callback: (error?: (Error | null)) => void) {
-    this.origin.on('data', (chunk) => {
-      if(!this.targetFulfilled) {
+  _construct(callback: (error?: Error | null) => void) {
+    this.origin.on("data", (chunk) => {
+      if (!this.targetFulfilled) {
         const targetResult = this.readStreamChecker(chunk);
         if (targetResult !== null) {
           this.targetResolve(targetResult);
@@ -35,18 +40,22 @@ export class DuplexReadableSearcher<T> extends Duplex {
       this.buffer.push(chunk);
       this.flushReadable();
     });
-    this.origin.on('end', () => {
+    this.origin.on("end", () => {
       this.targetResolve(null);
       this.flushReadable();
     });
     callback();
   }
 
-  _write(chunk: any, encoding?: BufferEncoding, cb?: (error: (Error | null | undefined)) => void): boolean {
-    return this.origin.write(chunk, encoding, cb)
+  _write(
+    chunk: any,
+    encoding?: BufferEncoding,
+    cb?: (error: Error | null | undefined) => void
+  ): boolean {
+    return this.origin.write(chunk, encoding, cb);
   }
 
-  _final(callback: (error?: (Error | null)) => void) {
+  _final(callback: (error?: Error | null) => void) {
     this.origin.end();
     callback();
   }
@@ -60,8 +69,8 @@ export class DuplexReadableSearcher<T> extends Duplex {
       return;
     }
 
-    while(this.buffer.length > 0) {
-      const chunk = this.buffer.shift()
+    while (this.buffer.length > 0) {
+      const chunk = this.buffer.shift();
       this.push(chunk);
     }
 

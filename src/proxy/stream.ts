@@ -1,25 +1,35 @@
 import { Duplex } from 'stream';
-import { DuplexReadableSearcher } from './stream/duplex-readable-searcher';
 
-export function defineStreamHost(origin: Duplex): Promise<{ host: string, stream: DuplexReadableSearcher<string> }> {
-  return new Promise(resolve => resolve({host: 'localhost', stream: new DuplexReadableSearcher(origin, () => '')}))
+export function emptyResponse() {
+  return httpResponseStream();
 }
 
-export const responseDuplexHandlers = {
-  mute: () => new Duplex(),
-  tunnelNotFound: (attemptedTunnelName: string) => new Duplex({
-    read(size: number) {
-      this.push(`HTTP/1.1 404 Not Found
-Host: localhost
+export function proxyNotFoundResponse(expectedTunnelName: string) {
+  return httpResponseStream(`
+HTTP/1.1 404 Not Found
+Host: ${ expectedTunnelName }
 Connection: close
 Content-type: text/html; charset=UTF-8
 
 <h1>Tunnel not found</h1>
-<span>Tunnel for host <b style="color: darkred">${attemptedTunnelName}</b> not found.</span>      
-      `);
+<span>Tunnel for host <b style="color: darkred">${ expectedTunnelName }</b> not found.</span>
+  `);
+}
+
+function httpResponseStream(response?: string): Duplex {
+  return new Duplex({
+    read() {
+      if (response !== undefined) {
+        this.push(response.trim());
+      }
       this.push(null);
     },
     write(chunk: any, encoding: BufferEncoding, callback: (error?: (Error | null)) => void) {
+      return null;
     }
-  })
+  });
+}
+
+export function mutualPipe(duplex1: Duplex, duplex2: Duplex) {
+  return duplex1.pipe(duplex2).pipe(duplex1);
 }

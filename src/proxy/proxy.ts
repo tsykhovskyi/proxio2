@@ -1,9 +1,9 @@
 import { TunnelInterface } from '../ssh/server';
-import { defineStreamHost, responseDuplexHandlers } from './stream';
-import { Server, createServer } from 'net';
-import { log } from '../helper/logger';
+import { emptyResponse, mutualPipe, proxyNotFoundResponse } from './stream';
+import { createServer, Server } from 'net';
 import { DuplexReadableSearcher } from './stream/duplex-readable-searcher';
 import { hostSearcher } from './stream/host-searcher';
+import { log } from '../helper/logger';
 
 export class ProxyServer {
   private sshTunnels: TunnelInterface[] = [];
@@ -18,41 +18,38 @@ export class ProxyServer {
   }
 
   run() {
-    let counter = 0;
     this.server.on('connection', async socket => {
-      if (socket.remoteAddress === undefined || socket.remotePort === undefined) {
+      const {remoteAddress, remotePort} = socket;
+      if (remoteAddress == undefined || remotePort == undefined) {
         return socket.end();
       }
-      socket[Symbol.for('socket')] = counter++;
-      log('socket opened', socket[Symbol.for('socket')]);
 
       const searchableSocket = new DuplexReadableSearcher(socket, hostSearcher);
       const host = await searchableSocket.target;
-      console.log('Host is found: ', host);
+      log('Host header is found: ', host);
 
       if (host === null) {
-        socket.pipe(responseDuplexHandlers.mute()).pipe(socket);
+        mutualPipe(searchableSocket, emptyResponse());
         return;
       }
 
       const targetTunnel = this.sshTunnels.find(tunnel => tunnel.bindAddr === host);
       if (targetTunnel === undefined) {
-        socket.pipe(responseDuplexHandlers.tunnelNotFound(host)).pipe(socket);
+        mutualPipe(searchableSocket, proxyNotFoundResponse(host));
         return;
       }
 
-      log('forwarding traffic...', socket[Symbol.for('socket')])
       targetTunnel.sshConnection.forwardOut(
         targetTunnel.bindAddr,
         targetTunnel.bindPort,
-        socket.remoteAddress ?? '',
-        socket.remotePort ?? 0,
+        remoteAddress,
+        remotePort,
         (err, sshChannel) => {
           if (err) {
             searchableSocket.end();
             return console.error('not working: ' + err);
           }
-          searchableSocket.pipe(sshChannel).pipe(searchableSocket);
+          mutualPipe(searchableSocket, sshChannel);
           // socket.pipe(consoleRequest, {end: false});
           // upstream.pipe(consoleResponse, {end: false});
         });
@@ -64,14 +61,3 @@ export class ProxyServer {
     this.server.close();
   }
 }
-//
-// function ConsoleStdout(name: string) {
-//   return new Stream.Writable({
-//     write: (chunk: any, encoding: BufferEncoding, next: (error?: Error | null) => void) => {
-//       process.stdout.write("\n" + name + "\n");
-//       process.stdout.write(chunk);
-//       next();
-//     }
-//   });
-//
-// }

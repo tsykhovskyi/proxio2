@@ -2,7 +2,7 @@ import { Server } from "ssh2";
 import path from "path";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
-import { TunnelInterface } from "../proxy/tunnel-storage";
+import { TunnelRequest } from "../proxy/tunnel-storage";
 
 export interface SshServerInterface {
   run(): void;
@@ -12,7 +12,7 @@ export interface SshServerInterface {
   on(
     event: "tunnel-requested",
     listener: (
-      tunnel: TunnelInterface,
+      tunnel: TunnelRequest,
       accept: () => void,
       reject: () => void
     ) => void

@@ -5,11 +5,11 @@ import {
   remoteHostIsUnreachableResponse,
 } from "./stream";
 import { createServer, Server } from "net";
-import { DuplexReadableSearcher } from "./stream/duplex-readable-searcher";
 import { hostSearcher } from "./stream/host-searcher";
 import { log } from "../helper/logger";
-import { TunnelInterface, TunnelStorage } from "./tunnel-storage";
+import { TunnelRequest, TunnelStorage } from "./tunnel-storage";
 import { Duplex } from "stream";
+import { readablePreProcess } from "./stream/readable-pre-process";
 
 export class ProxyServer {
   private servers = new Map<number, Server>();
@@ -19,7 +19,7 @@ export class ProxyServer {
     this.tunnelStorage = new TunnelStorage();
   }
 
-  addTunnel(tunnel: TunnelInterface): boolean {
+  addTunnel(tunnel: TunnelRequest): boolean {
     if (tunnel.bindPort !== 80) {
       this.runTcpServer(tunnel.bindPort);
     }
@@ -44,23 +44,22 @@ export class ProxyServer {
         return socket.end();
       }
 
-      const searchableSocket = new DuplexReadableSearcher(socket, hostSearcher);
-      const host = await searchableSocket.target;
+      const host = await readablePreProcess(socket, hostSearcher);
       log("Host header is found: ", host);
 
       if (host === null) {
-        mutualPipe(searchableSocket, emptyResponse());
+        mutualPipe(socket, emptyResponse());
         return;
       }
 
       const targetTunnel = this.tunnelStorage.find(host, 80);
       if (targetTunnel === null) {
-        mutualPipe(searchableSocket, httpProxyNotFoundResponse(host));
+        mutualPipe(socket, httpProxyNotFoundResponse(host));
         return;
       }
 
       this.forwardTraffic(
-        searchableSocket,
+        socket,
         targetTunnel,
         remoteAddress,
         remotePort,
@@ -101,7 +100,7 @@ export class ProxyServer {
 
   private forwardTraffic(
     socket: Duplex,
-    tunnel: TunnelInterface,
+    tunnel: TunnelRequest,
     remoteAddress: string,
     remotePort: number,
     errorCb: (error: Error) => Duplex

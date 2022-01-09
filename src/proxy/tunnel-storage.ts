@@ -1,6 +1,6 @@
 import { Connection } from "ssh2";
 
-export interface TunnelInterface {
+export interface TunnelRequest {
   /**
    * address requested by user as a proxy
    */
@@ -14,10 +14,10 @@ export interface TunnelInterface {
 }
 
 export class TunnelStorage {
-  private tcpTunnels = new Map<number, TunnelInterface>();
-  private httpTunnels = new Map<string, TunnelInterface>();
+  private tcpTunnels = new Map<number, TunnelRequest>();
+  private httpTunnels = new Map<string, TunnelRequest>();
 
-  add(tunnel: TunnelInterface): boolean {
+  add(tunnel: TunnelRequest): boolean {
     if (tunnel.bindPort === 80) {
       return this.addHttpTunnel(tunnel);
     }
@@ -25,7 +25,7 @@ export class TunnelStorage {
     return this.addTcpTunnel(tunnel);
   }
 
-  find(bindAddr: string | null, bindPort: number): TunnelInterface | null {
+  find(bindAddr: string | null, bindPort: number): TunnelRequest | null {
     if (bindPort === 80 && bindAddr !== null) {
       return this.httpTunnels.get(bindAddr) ?? null;
     }
@@ -36,7 +36,7 @@ export class TunnelStorage {
     return null;
   }
 
-  private addHttpTunnel(tunnel: TunnelInterface): boolean {
+  private addHttpTunnel(tunnel: TunnelRequest): boolean {
     if (this.httpTunnels.has(tunnel.bindAddr)) {
       return false;
     }
@@ -45,7 +45,7 @@ export class TunnelStorage {
     return true;
   }
 
-  private addTcpTunnel(tunnel: TunnelInterface): boolean {
+  private addTcpTunnel(tunnel: TunnelRequest): boolean {
     if (this.tcpTunnels.has(tunnel.bindPort)) {
       return false;
     }

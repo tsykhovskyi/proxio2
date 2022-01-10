@@ -18,7 +18,7 @@ export class ProxyServer {
 
   onTunnelRequest(request: TunnelRequest) {
     if (!this.tunnelStorage.find(request.bindAddr, request.bindPort)) {
-      request.accept();
+      request.accept(request.bindAddr, request.bindPort);
     } else {
       request.reject();
     }
@@ -35,14 +35,17 @@ export class ProxyServer {
     } else {
       tunnel.channelWrite(`Proxy opened on ${tunnel.port} port\n`);
     }
+
+    tunnel.on("close", () => {
+      this.proxyServer.deleteTunnel(tunnel);
+      this.tunnelStorage.delete(tunnel);
+    });
   }
 
   onHttpConnection(host: string, socket: Socket) {
     const tunnel = this.tunnelStorage.findHttp(host);
     if (!tunnel) {
-      // todo move to servers logic
-      mutualPipe(socket, httpProxyNotFoundResponse(host));
-      return;
+      return socket.end();
     }
     tunnel.serve(socket);
   }

@@ -2,13 +2,13 @@ import { Server, Connection } from "ssh2";
 import path from "path";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
-import { SshTunnel } from "./tunnel";
+import { HttpSshTunnel, SshTunnel, TcpSshTunnel } from "./tunnel";
 import { Tunnel } from "../proxy/tunnel";
 
 export interface TunnelRequest {
   bindAddr: string;
   bindPort: number;
-  accept: () => void;
+  accept: (address?: string, port?: number) => void;
   reject: () => void;
 }
 
@@ -91,13 +91,16 @@ export class SshServer extends EventEmitter implements SshServerInterface {
           this.emit("tunnel-requested", <TunnelRequest>{
             bindAddr: info.bindAddr,
             bindPort: info.bindPort,
-            accept: () => {
+            accept: (address?: string, port?: number) => {
               accept();
-              const tunnel = new SshTunnel(
-                info.bindAddr,
-                info.bindPort,
-                connection
-              );
+              let tunnel: SshTunnel;
+              if (address) {
+                tunnel = new HttpSshTunnel(address, 80, connection);
+              } else if (port) {
+                tunnel = new TcpSshTunnel("127.0.0.1", port, connection);
+              } else {
+                throw new Error("Undefined tunnel type");
+              }
               this.connections.set(connection, tunnel);
 
               this.emit("tunnel-opened", tunnel);

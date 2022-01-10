@@ -51,5 +51,5 @@ function httpResponseStream(response?: string): Duplex {
 }
 
 export function mutualPipe(duplex1: Duplex, duplex2: Duplex) {
-  return duplex1.pipe(duplex2).pipe(duplex1);
+  duplex1.pipe(duplex2).pipe(duplex1);
 }

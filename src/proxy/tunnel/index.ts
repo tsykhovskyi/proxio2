@@ -10,7 +10,7 @@ export interface Tunnel {
   /**
    * If tunnel HTTP or TCP
    */
-  readonly http: boolean;
+  http: boolean;
 
   readonly address: string;
   readonly port: number;

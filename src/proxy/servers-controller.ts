@@ -17,20 +17,22 @@ export declare interface ServersController {
 }
 
 export class ServersController extends EventEmitter {
+  private httpAddresses = new Set<string>();
   private servers = new Map<number, Server>();
 
   addTunnel(tunnel: Tunnel): void {
-    // tunnel.on("tcp-forward-error", (err) => {
-    //   console.log("error forwarding...", err);
-    // });
-    tunnel.on("close", () => {
-      if (!tunnel.http) {
-        this.stopTcpServer(tunnel.port);
-      }
-    });
-
-    if (!tunnel.http) {
+    if (tunnel.http) {
+      this.httpAddresses.add(tunnel.address);
+    } else {
       this.runTcpServer(tunnel.port);
+    }
+  }
+
+  deleteTunnel(tunnel: Tunnel) {
+    if (tunnel.http) {
+      this.httpAddresses.delete(tunnel.address);
+    } else {
+      this.stopTcpServer(tunnel.port);
     }
   }
 
@@ -56,19 +58,14 @@ export class ServersController extends EventEmitter {
 
     const host = await readablePreProcess(socket, hostSearcher);
     if (host === null) {
-      mutualPipe(socket, emptyResponse());
-      return;
+      return mutualPipe(socket, emptyResponse());
+    }
+
+    if (!this.httpAddresses.has(host)) {
+      return mutualPipe(socket, httpProxyNotFoundResponse(host));
     }
 
     this.emit("http-connection", host, socket);
-
-    // const targetTunnel = this.tunnelStorage.find(host, 80);
-    // if (targetTunnel === null) {
-    //   mutualPipe(socket, httpProxyNotFoundResponse(host));
-    //   return;
-    // }
-    //
-    // targetTunnel.serve(socket);
   }
 
   private runHttpServer() {
@@ -103,14 +100,10 @@ export class ServersController extends EventEmitter {
       if (remoteAddress == undefined || remotePort == undefined) {
         return socket.end();
       }
+      if (!this.servers.has(remotePort)) {
+        socket.end();
+      }
       this.emit("tcp-connection", bindPort, socket);
-
-      // const targetTunnel = this.tunnelStorage.find(null, bindPort);
-      // if (targetTunnel === null) {
-      //   return socket.end();
-      // }
-
-      // targetTunnel.serve(socket);
     });
 
     this.servers.set(bindPort, tcpServer);

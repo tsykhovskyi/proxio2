@@ -31,6 +31,14 @@ export class TunnelStorage {
     return null;
   }
 
+  findHttp(host: string) {
+    return this.httpTunnels.get(host) ?? null;
+  }
+
+  findTcp(port: number) {
+    return this.tcpTunnels.get(port) ?? null;
+  }
+
   private addHttpTunnel(tunnel: Tunnel): boolean {
     if (this.httpTunnels.has(tunnel.address)) {
       return false;

@@ -3,8 +3,14 @@ import path from "path";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
 import { SshTunnel } from "./tunnel";
-import { TunnelRequest } from "../proxy";
 import { Tunnel } from "../proxy/tunnel";
+
+export interface TunnelRequest {
+  bindAddr: string;
+  bindPort: number;
+  accept: () => void;
+  reject: () => void;
+}
 
 export interface SshServerInterface {
   run(): void;

@@ -14,9 +14,13 @@ sshServer.on("tunnel-requested", (request) => {
 
 sshServer.on("tunnel-opened", (tunnel) => {
   proxyServer.addTunnel(tunnel);
-  tunnel.channelWrite(
-    `Proxy opened on http://${tunnel.bindAddr}:${tunnel.bindPort}\n`
-  );
+  if (tunnel.http) {
+    tunnel.channelWrite(
+      `Proxy opened on\nhttp://${tunnel.address}\nhttps://${tunnel.address}\n`
+    );
+  } else {
+    tunnel.channelWrite(`Proxy opened on ${tunnel.port} port\n`);
+  }
 });
 
 sshServer.run();

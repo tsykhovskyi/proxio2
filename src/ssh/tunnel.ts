@@ -1,14 +1,15 @@
 import { Statistic, Tunnel } from "../proxy/tunnel";
 import EventEmitter from "events";
 import { Socket } from "net";
-import { mutualPipe } from "../proxy/stream";
+import {
+  emptyResponse,
+  mutualPipe,
+  remoteHostIsUnreachableResponse,
+} from "../proxy/stream";
 import { Connection, ServerChannel } from "ssh2";
 
-// type SshTunnelEvents = {
-//   'tcp-forward-error': (err: Error) => void
-// }
-
 export class SshTunnel extends EventEmitter implements Tunnel {
+  public readonly http;
   private channel: ServerChannel | null = null;
   private messagesBuffer: string[] = [];
 
@@ -19,11 +20,12 @@ export class SshTunnel extends EventEmitter implements Tunnel {
   };
 
   constructor(
-    public readonly bindAddr: string,
-    public readonly bindPort: number,
+    public readonly address: string,
+    public readonly port: number,
     private readonly sshConnection: Connection
   ) {
     super();
+    this.http = port === 80;
   }
 
   serve(socket: Socket) {
@@ -32,16 +34,27 @@ export class SshTunnel extends EventEmitter implements Tunnel {
     }
 
     this.sshConnection.forwardOut(
-      this.bindAddr,
-      this.bindPort,
+      this.address,
+      this.port,
       socket.remoteAddress,
       socket.remotePort,
       (err, sshChannel) => {
         if (err) {
+          if (this.http) {
+            mutualPipe(
+              socket,
+              remoteHostIsUnreachableResponse(
+                `http://${socket.remoteAddress}:${socket.remotePort}`,
+                err
+              )
+            );
+          } else {
+            mutualPipe(socket, emptyResponse());
+          }
           this.emit("tcp-forward-error", err);
-          return;
+        } else {
+          mutualPipe(socket, sshChannel);
         }
-        mutualPipe(socket, sshChannel);
       }
     );
   }

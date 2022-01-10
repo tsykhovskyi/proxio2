@@ -7,8 +7,14 @@ export interface Statistic {
 }
 
 export interface Tunnel {
-  readonly bindAddr: string;
-  readonly bindPort: number;
+  /**
+   * If tunnel HTTP or TCP
+   */
+  readonly http: boolean;
+
+  readonly address: string;
+  readonly port: number;
+
   statistic: Readonly<Statistic>;
 
   serve(socket: Socket);

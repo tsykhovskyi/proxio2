@@ -16,7 +16,7 @@ export interface SshServerInterface {
     listener: (request: TunnelRequest) => void
   ): this;
 
-  on(event: "tunnel-opened", listener: (tunnel: Tunnel) => void);
+  on(event: "tunnel-opened", listener: (tunnel: Tunnel) => void): this;
 }
 
 export class SshServer extends EventEmitter implements SshServerInterface {
@@ -26,7 +26,9 @@ export class SshServer extends EventEmitter implements SshServerInterface {
   constructor() {
     super();
     this.server = new Server({
-      hostKeys: [readFileSync(path.join(__dirname, "../../assets/server_key"))],
+      hostKeys: [
+        readFileSync(path.join(__dirname, "../../assets/ssh/server_key")),
+      ],
     });
   }
 

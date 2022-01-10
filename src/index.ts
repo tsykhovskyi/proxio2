@@ -4,13 +4,19 @@ import { ProxyServer } from "./proxy/proxy";
 const sshServer: SshServerInterface = new SshServer();
 const proxyServer = new ProxyServer();
 
-sshServer.on("tunnel-requested", (tunnel, accept, reject) => {
-  // todo validate tunnels
-  if (proxyServer.addTunnel(tunnel)) {
-    accept();
+sshServer.on("tunnel-requested", (request) => {
+  if (proxyServer.canCreate(request)) {
+    request.accept();
   } else {
-    reject();
+    request.reject();
   }
+});
+
+sshServer.on("tunnel-opened", (tunnel) => {
+  proxyServer.addTunnel(tunnel);
+  tunnel.channelWrite(
+    `Proxy opened on http://${tunnel.bindAddr}:${tunnel.bindPort}\n`
+  );
 });
 
 sshServer.run();

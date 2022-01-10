@@ -1,15 +1,11 @@
-import {
-  emptyResponse,
-  httpProxyNotFoundResponse,
-  mutualPipe,
-  remoteHostIsUnreachableResponse,
-} from "./stream";
+import { emptyResponse, httpProxyNotFoundResponse, mutualPipe } from "./stream";
 import { createServer, Server } from "net";
 import { hostSearcher } from "./stream/host-searcher";
 import { log } from "../helper/logger";
-import { TunnelRequest, TunnelStorage } from "./tunnel-storage";
-import { Duplex } from "stream";
+import { TunnelStorage } from "./tunnel-storage";
 import { readablePreProcess } from "./stream/readable-pre-process";
+import { Tunnel } from "./tunnel";
+import { TunnelRequest } from "./index";
 
 export class ProxyServer {
   private servers = new Map<number, Server>();
@@ -19,7 +15,21 @@ export class ProxyServer {
     this.tunnelStorage = new TunnelStorage();
   }
 
-  addTunnel(tunnel: TunnelRequest): boolean {
+  canCreate(request: TunnelRequest): boolean {
+    return null === this.tunnelStorage.find(request.bindAddr, request.bindPort);
+  }
+
+  addTunnel(tunnel: Tunnel): boolean {
+    tunnel.on("tcp-forward-error", (err) => {
+      console.log("error forwarding...", err);
+    });
+    tunnel.on("close", () => {
+      if (tunnel.bindPort !== 80) {
+        this.stopTcpServer(tunnel.bindPort);
+      }
+      return this.tunnelStorage.delete(tunnel);
+    });
+
     if (tunnel.bindPort !== 80) {
       this.runTcpServer(tunnel.bindPort);
     }
@@ -58,13 +68,7 @@ export class ProxyServer {
         return;
       }
 
-      this.forwardTraffic(
-        socket,
-        targetTunnel,
-        remoteAddress,
-        remotePort,
-        (err) => remoteHostIsUnreachableResponse(host, err)
-      );
+      targetTunnel.serve(socket);
     });
 
     this.servers.set(80, httpServer);
@@ -87,9 +91,10 @@ export class ProxyServer {
         return socket.end();
       }
 
-      this.forwardTraffic(socket, targetTunnel, remoteAddress, remotePort, () =>
-        emptyResponse()
-      );
+      targetTunnel.serve(socket);
+      // this.forwardTraffic(socket, targetTunnel, remoteAddress, remotePort, () =>
+      //   emptyResponse()
+      // );
     });
 
     this.servers.set(bindPort, tcpServer);
@@ -98,29 +103,12 @@ export class ProxyServer {
     );
   }
 
-  private forwardTraffic(
-    socket: Duplex,
-    tunnel: TunnelRequest,
-    remoteAddress: string,
-    remotePort: number,
-    errorCb: (error: Error) => Duplex
-  ) {
-    tunnel.sshConnection.forwardOut(
-      tunnel.bindAddr,
-      tunnel.bindPort,
-      remoteAddress,
-      remotePort,
-      (err, sshChannel) => {
-        if (err) {
-          const forwardErrorResponse = errorCb(err);
-          mutualPipe(socket, forwardErrorResponse);
-          // socket.end();
-          return;
-        }
-        mutualPipe(socket, sshChannel);
-        // socket.pipe(consoleRequest, {end: false});
-        // upstream.pipe(consoleResponse, {end: false});
-      }
-    );
+  private stopTcpServer(bindPort: number) {
+    const server = this.servers.get(bindPort);
+    if (server === undefined) {
+      return;
+    }
+    server.close(() => console.log(`Proxy port ${bindPort} is released`));
+    this.servers.delete(bindPort);
   }
 }

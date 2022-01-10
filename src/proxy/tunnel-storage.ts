@@ -1,23 +1,10 @@
-import { Connection } from "ssh2";
-
-export interface TunnelRequest {
-  /**
-   * address requested by user as a proxy
-   */
-  bindAddr: string;
-  /**
-   * proxy port requested by user
-   */
-  bindPort: number;
-
-  sshConnection: Connection;
-}
+import { Tunnel } from "./tunnel";
 
 export class TunnelStorage {
-  private tcpTunnels = new Map<number, TunnelRequest>();
-  private httpTunnels = new Map<string, TunnelRequest>();
+  private tcpTunnels = new Map<number, Tunnel>();
+  private httpTunnels = new Map<string, Tunnel>();
 
-  add(tunnel: TunnelRequest): boolean {
+  add(tunnel: Tunnel): boolean {
     if (tunnel.bindPort === 80) {
       return this.addHttpTunnel(tunnel);
     }
@@ -25,7 +12,15 @@ export class TunnelStorage {
     return this.addTcpTunnel(tunnel);
   }
 
-  find(bindAddr: string | null, bindPort: number): TunnelRequest | null {
+  delete(tunnel: Tunnel) {
+    if (tunnel.bindPort === 80) {
+      this.httpTunnels.delete(tunnel.bindAddr);
+    }
+
+    this.tcpTunnels.delete(tunnel.bindPort);
+  }
+
+  find(bindAddr: string | null, bindPort: number): Tunnel | null {
     if (bindPort === 80 && bindAddr !== null) {
       return this.httpTunnels.get(bindAddr) ?? null;
     }
@@ -36,7 +31,7 @@ export class TunnelStorage {
     return null;
   }
 
-  private addHttpTunnel(tunnel: TunnelRequest): boolean {
+  private addHttpTunnel(tunnel: Tunnel): boolean {
     if (this.httpTunnels.has(tunnel.bindAddr)) {
       return false;
     }
@@ -45,7 +40,7 @@ export class TunnelStorage {
     return true;
   }
 
-  private addTcpTunnel(tunnel: TunnelRequest): boolean {
+  private addTcpTunnel(tunnel: Tunnel): boolean {
     if (this.tcpTunnels.has(tunnel.bindPort)) {
       return false;
     }

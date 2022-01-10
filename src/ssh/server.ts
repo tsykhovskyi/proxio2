@@ -1,8 +1,10 @@
-import { Server } from "ssh2";
+import { Server, Connection } from "ssh2";
 import path from "path";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
-import { TunnelRequest } from "../proxy/tunnel-storage";
+import { SshTunnel } from "./tunnel";
+import { TunnelRequest } from "../proxy";
+import { Tunnel } from "../proxy/tunnel";
 
 export interface SshServerInterface {
   run(): void;
@@ -11,16 +13,15 @@ export interface SshServerInterface {
 
   on(
     event: "tunnel-requested",
-    listener: (
-      tunnel: TunnelRequest,
-      accept: () => void,
-      reject: () => void
-    ) => void
+    listener: (request: TunnelRequest) => void
   ): this;
+
+  on(event: "tunnel-opened", listener: (tunnel: Tunnel) => void);
 }
 
 export class SshServer extends EventEmitter implements SshServerInterface {
   private server: Server;
+  private connections = new Map<Connection, SshTunnel>();
 
   constructor() {
     super();
@@ -30,10 +31,10 @@ export class SshServer extends EventEmitter implements SshServerInterface {
   }
 
   run() {
-    this.server.on("connection", (client) => {
+    this.server.on("connection", (connection) => {
       console.log("Client connected!");
 
-      client
+      connection
         .on("authentication", (ctx) => {
           ctx.accept();
         })
@@ -45,17 +46,18 @@ export class SshServer extends EventEmitter implements SshServerInterface {
 
           session.on("shell", (accept, reject) => {
             const chan = accept();
-            chan.on("data", (chunk) => {
-              const buf = Buffer.from(chunk);
-              chan.stdout.write("answerw: " + buf.toString());
-            });
-            chan.on("end", () => {
-              console.log("end");
-            });
-            chan.on("exit", (code) => {
-              console.log("Exit with", code);
-            });
-            chan.write("AAAAAAAAAa\n");
+            this.tunnelCmd(connection, (tunnel) => tunnel.setChannel(chan));
+            // chan.on("data", (chunk) => {
+            //   const buf = Buffer.from(chunk);
+            //   chan.stdout.write("answerw: " + buf.toString());
+            // });
+            // chan.on("end", () => {
+            //   console.log("end");
+            // });
+            // chan.on("exit", (code) => {
+            //   console.log("Exit with", code);
+            // });
+            // chan.write("AAAAAAAAAa\n");
           });
 
           session.on("pty", (accept, reject, info) => {
@@ -65,12 +67,9 @@ export class SshServer extends EventEmitter implements SshServerInterface {
           session.on("close", () => {
             return;
           });
-        })
-        .on("end", () => {
-          console.log("Client disconnected");
         });
 
-      client.on("request", (accept, reject, name, info) => {
+      connection.on("request", (accept, reject, name, info) => {
         if (accept === undefined || reject === undefined) {
           throw new Error();
         }
@@ -81,35 +80,43 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             return;
           }
 
-          // this.tunnels.push({bindAddr: info.bindAddr, bindPort: info.bindPort, sshConnection: client});
-          // this.emit('tunnel-opened', {bindAddr: info.bindAddr, bindPort: info.bindPort, sshConnection: client});
-          this.emit(
-            "tunnel-requested",
-            {
-              bindAddr: info.bindAddr,
-              bindPort: info.bindPort,
-              sshConnection: client,
+          this.emit("tunnel-requested", <TunnelRequest>{
+            bindAddr: info.bindAddr,
+            bindPort: info.bindPort,
+            accept: () => {
+              accept();
+              const tunnel = new SshTunnel(
+                info.bindAddr,
+                info.bindPort,
+                connection
+              );
+              this.connections.set(connection, tunnel);
+
+              this.emit("tunnel-opened", tunnel);
             },
-            () => accept(),
-            () => reject()
-          );
+            reject: reject.bind(this),
+          });
         } else {
           reject();
         }
       });
 
-      // client.on('error', err => {
-      //   console.error(err);
-      //   client.end();
-      // });
-      //
-      // client.on('openssh.streamlocal', (accept, reject, info) => {
-      //   console.log();
-      // })
-      //
-      // client.on('tcpip', (accept, reject, info) => {
-      //   console.log('TCP/IP');
-      // });
+      connection.on("error", (err: Error) =>
+        this.tunnelCmd(connection, (tunnel) => {
+          this.connections.delete(connection);
+          tunnel.close("An error occurred. " + err.message);
+        })
+      );
+      // connection.on("close", () => this.tunnelCmd(connection, (tunnel) =>
+      //   tunnel.close("The client socket was closed.")
+      // ));
+
+      connection.on("end", () =>
+        this.tunnelCmd(connection, (tunnel) => {
+          this.connections.delete(connection);
+          tunnel.close("The client socket disconnected");
+        })
+      );
     });
 
     this.server.listen(2233, "127.0.0.1", () => {
@@ -119,5 +126,13 @@ export class SshServer extends EventEmitter implements SshServerInterface {
 
   stop() {
     this.server.close();
+  }
+
+  private tunnelCmd(connection: Connection, cmd: (tunnel: SshTunnel) => void) {
+    const tunnel = this.connections.get(connection);
+    if (!tunnel) {
+      return;
+    }
+    cmd(tunnel);
   }
 }

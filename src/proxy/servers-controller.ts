@@ -61,6 +61,15 @@ export class ServersController extends EventEmitter {
       return mutualPipe(socket, emptyResponse());
     }
 
+    if (host === "monitor.localhost") {
+      // Forward to express app socket
+      const forwarder = new Socket();
+      forwarder.connect(8080, "localhost", () => {
+        socket.pipe(forwarder).pipe(socket);
+      });
+      return;
+    }
+
     if (!this.httpAddresses.has(host)) {
       return mutualPipe(socket, httpProxyNotFoundResponse(host));
     }

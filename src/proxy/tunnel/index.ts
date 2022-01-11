@@ -1,9 +1,11 @@
 import { Socket } from "net";
 
 export interface Statistic {
-  incomingTraffic: number;
-  outgoingTraffic: number;
+  inboundTraffic: number;
+  outboundTraffic: number;
   traffic: number;
+  requests: number;
+  responses: number;
 }
 
 export interface Tunnel {

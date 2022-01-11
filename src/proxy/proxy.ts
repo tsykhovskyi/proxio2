@@ -3,7 +3,6 @@ import { TunnelStorage } from "./tunnel-storage";
 import { Tunnel } from "./tunnel";
 import { ServersController } from "./servers-controller";
 import { Socket } from "net";
-import { httpProxyNotFoundResponse, mutualPipe } from "./stream";
 
 export class ProxyServer {
   private sshServer: SshServerInterface;

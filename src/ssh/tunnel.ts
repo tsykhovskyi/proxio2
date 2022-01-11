@@ -3,14 +3,36 @@ import EventEmitter from "events";
 import { Socket } from "net";
 import { mutualPipe, remoteHostIsUnreachableResponse } from "../proxy/stream";
 import { Connection, ServerChannel } from "ssh2";
-import { Transform, TransformCallback } from "stream";
+
+class StatisticHandler implements Statistic {
+  inboundTraffic: number = 0;
+  outboundTraffic: number = 0;
+  traffic: number = 0;
+  requests: number = 0;
+  responses: number = 0;
+
+  inboundChunk(chunk: Buffer) {
+    console.log(`chunk in type: ${chunk.byteLength}, size: ${chunk.length}`);
+    this.inboundTraffic += chunk.length;
+    this.traffic += chunk.length;
+  }
+  outboundChunk(chunk: Buffer) {
+    console.log(`chunk out type: ${chunk.byteLength}, size: ${chunk.length}`);
+    this.outboundTraffic += chunk.length;
+    this.traffic += chunk.length;
+  }
+
+  request() {
+    this.requests++;
+  }
+
+  response() {
+    this.responses++;
+  }
+}
 
 export abstract class SshTunnel extends EventEmitter {
-  statistic: Statistic = {
-    incomingTraffic: 0,
-    outgoingTraffic: 0,
-    traffic: 0,
-  };
+  statistic = new StatisticHandler();
 
   private channel: ServerChannel | null = null;
   private messagesBuffer: string[] = [];
@@ -21,28 +43,6 @@ export abstract class SshTunnel extends EventEmitter {
     protected sshConnection: Connection
   ) {
     super();
-  }
-
-  createCounter(direction: "in" | "out") {
-    const statistic = this.statistic;
-
-    return new Transform({
-      transform(
-        chunk: any,
-        encoding: BufferEncoding,
-        callback: TransformCallback
-      ) {
-        if (direction === "in") {
-          statistic.incomingTraffic += chunk.length;
-        }
-        if (direction === "out") {
-          statistic.outgoingTraffic += chunk.length;
-        }
-        statistic.traffic += chunk.length;
-        console.log(statistic);
-        callback(null, chunk);
-      },
-    });
   }
 
   close(reason: string) {
@@ -81,14 +81,18 @@ export abstract class SshTunnel extends EventEmitter {
           return this.emit("tcp-forward-error", err);
         }
 
-        socket.pipe(this.trafficCounter("in")).pipe(sshChannel);
-        sshChannel.pipe(this.trafficCounter("out")).pipe(socket);
+        socket.pipe(sshChannel).pipe(socket);
+
+        socket.on("data", (chunk) => this.statistic.inboundChunk(chunk));
+        sshChannel.on("data", (chunk) => this.statistic.outboundChunk(chunk));
+
+        socket.on("end", () => this.statistic.request());
+        sshChannel.on("end", () => this.statistic.response());
       }
     );
   }
 
   abstract handleServeError(err: Error, socket: Socket);
-  abstract trafficCounter(direction: "in" | "out"): Transform;
 }
 
 export class TcpSshTunnel extends SshTunnel implements Tunnel {
@@ -96,10 +100,6 @@ export class TcpSshTunnel extends SshTunnel implements Tunnel {
 
   handleServeError(err: Error, socket: Socket) {
     socket.end();
-  }
-
-  trafficCounter(direction: "in" | "out"): Transform {
-    return this.createCounter(direction);
   }
 }
 
@@ -114,9 +114,5 @@ export class HttpSshTunnel extends SshTunnel implements Tunnel {
         err
       )
     );
-  }
-
-  trafficCounter(direction: "in" | "out"): Transform {
-    return this.createCounter(direction);
   }
 }

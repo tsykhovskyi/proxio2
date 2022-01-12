@@ -41,8 +41,8 @@ export class ServersController extends EventEmitter {
   }
 
   stop() {
-    for (const server of this.servers.values()) {
-      server.close();
+    for (const [port, server] of this.servers.entries()) {
+      server.close(() => console.log(`Port ${port}  is released`));
     }
   }
 
@@ -64,7 +64,7 @@ export class ServersController extends EventEmitter {
     if (host === "monitor.localhost") {
       // Forward to express app socket
       const forwarder = new Socket();
-      forwarder.connect(8080, "localhost", () => {
+      forwarder.connect(3000, "localhost", () => {
         socket.pipe(forwarder).pipe(socket);
       });
       return;

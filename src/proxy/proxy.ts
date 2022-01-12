@@ -67,4 +67,9 @@ export class ProxyServer {
     this.sshServer.run();
     this.proxyServer.run();
   }
+
+  stop() {
+    this.proxyServer.stop();
+    this.sshServer.stop();
+  }
 }

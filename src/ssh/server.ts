@@ -136,7 +136,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
   }
 
   stop() {
-    this.server.close();
+    this.server.close(() => console.log("SSH server is closed"));
   }
 
   private tunnelCmd(connection: Connection, cmd: (tunnel: SshTunnel) => void) {

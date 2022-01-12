@@ -1,11 +1,12 @@
 import { Tunnel } from "./tunnel";
+import { config } from "../config";
 
 export class TunnelStorage {
   private tcpTunnels = new Map<number, Tunnel>();
   private httpTunnels = new Map<string, Tunnel>();
 
   add(tunnel: Tunnel): boolean {
-    if (tunnel.port === 80) {
+    if (tunnel.port === config.httpPort) {
       return this.addHttpTunnel(tunnel);
     }
 
@@ -13,7 +14,7 @@ export class TunnelStorage {
   }
 
   delete(tunnel: Tunnel) {
-    if (tunnel.port === 80) {
+    if (tunnel.port === config.httpPort) {
       this.httpTunnels.delete(tunnel.address);
     }
 
@@ -21,7 +22,7 @@ export class TunnelStorage {
   }
 
   find(bindAddr: string | null, bindPort: number): Tunnel | null {
-    if (bindPort === 80 && bindAddr !== null) {
+    if (bindPort === config.httpPort && bindAddr !== null) {
       return this.httpTunnels.get(bindAddr) ?? null;
     }
     if (bindPort !== null) {

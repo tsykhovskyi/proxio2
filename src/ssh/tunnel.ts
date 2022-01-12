@@ -78,7 +78,8 @@ export abstract class SshTunnel extends EventEmitter {
       (err, sshChannel) => {
         if (err) {
           this.handleServeError(err, socket);
-          return this.emit("tcp-forward-error", err);
+          this.emit("tcp-forward-error", err);
+          return;
         }
 
         socket.pipe(sshChannel).pipe(socket);

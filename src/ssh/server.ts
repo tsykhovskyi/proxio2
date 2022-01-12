@@ -1,9 +1,9 @@
-import { Server, Connection } from "ssh2";
-import path from "path";
+import { Connection, Server } from "ssh2";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
 import { HttpSshTunnel, SshTunnel, TcpSshTunnel } from "./tunnel";
 import { Tunnel } from "../proxy/tunnel";
+import { config } from "../config";
 
 export interface TunnelRequest {
   bindAddr: string;
@@ -32,9 +32,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
   constructor() {
     super();
     this.server = new Server({
-      hostKeys: [
-        readFileSync(path.join(__dirname, "../../assets/ssh/server_key")),
-      ],
+      hostKeys: [readFileSync(config.sshPrivateKeyPath)],
     });
   }
 
@@ -95,7 +93,11 @@ export class SshServer extends EventEmitter implements SshServerInterface {
               accept();
               let tunnel: SshTunnel;
               if (address) {
-                tunnel = new HttpSshTunnel(address, 80, connection);
+                tunnel = new HttpSshTunnel(
+                  address,
+                  config.httpPort,
+                  connection
+                );
               } else if (port) {
                 tunnel = new TcpSshTunnel("127.0.0.1", port, connection);
               } else {
@@ -130,8 +132,8 @@ export class SshServer extends EventEmitter implements SshServerInterface {
       );
     });
 
-    this.server.listen(2233, "127.0.0.1", () => {
-      console.log("Listening on port " + this.server.address().port);
+    this.server.listen(config.sshPort, "127.0.0.1", () => {
+      console.log("Listening on port " + config.sshPort);
     });
   }
 

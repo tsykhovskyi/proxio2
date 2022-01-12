@@ -5,8 +5,8 @@ import { readablePreProcess } from "./stream/readable-pre-process";
 import { Tunnel } from "./tunnel";
 import * as tls from "tls";
 import * as fs from "fs";
-import path from "path";
 import EventEmitter from "events";
+import { config } from "../config";
 
 export declare interface ServersController {
   on(
@@ -61,10 +61,10 @@ export class ServersController extends EventEmitter {
       return mutualPipe(socket, emptyResponse());
     }
 
-    if (host === "monitor.localhost") {
-      // Forward to express app socket
+    if (host === `${config.monitorSubDomain}.${config.domainName}`) {
+      // Forward to monitor app socket
       const forwarder = new Socket();
-      forwarder.connect(3000, "localhost", () => {
+      forwarder.connect(config.monitorServerPort, "127.0.0.1", () => {
         socket.pipe(forwarder).pipe(socket);
       });
       return;
@@ -80,22 +80,22 @@ export class ServersController extends EventEmitter {
   private runHttpServer() {
     const httpServer = createServer();
     httpServer.on("connection", this.onConnection.bind(this));
-    httpServer.listen(80, () => console.log("Proxy port 80 is listening..."));
-    this.servers.set(80, httpServer);
+    httpServer.listen(config.httpPort, () =>
+      console.log(`Proxy port ${config.httpPort} is listening...`)
+    );
+    this.servers.set(config.httpPort, httpServer);
 
     const tlsServer = tls.createServer(
       {
-        key: fs.readFileSync(
-          path.join(__dirname, "../../assets/tls/server-key.pem")
-        ),
-        cert: fs.readFileSync(
-          path.join(__dirname, "../../assets/tls/server-cert.pem")
-        ),
+        key: fs.readFileSync(config.sslCertificateKeyPath),
+        cert: fs.readFileSync(config.sslCertificatePath),
       },
       this.onConnection.bind(this)
     );
-    tlsServer.listen(443, () => console.log("Proxy port 443 is listening..."));
-    this.servers.set(443, tlsServer);
+    tlsServer.listen(config.httpsPort, () =>
+      console.log(`Proxy port ${config.httpsPort} is listening...`)
+    );
+    this.servers.set(config.httpsPort, tlsServer);
   }
 
   private runTcpServer(bindPort: number) {

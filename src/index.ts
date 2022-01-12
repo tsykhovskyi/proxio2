@@ -5,7 +5,7 @@ const proxy = new ProxyServer();
 proxy.run();
 
 const monitor = new Monitor();
-monitor.run(3000);
+monitor.run();
 
 process.on("SIGINT", () => {
   proxy.stop();

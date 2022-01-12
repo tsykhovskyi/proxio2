@@ -1,38 +1,12 @@
-import { Statistic, Tunnel } from "../proxy/tunnel";
+import { Tunnel } from "../proxy/tunnel";
 import EventEmitter from "events";
 import { Socket } from "net";
 import { mutualPipe, remoteHostIsUnreachableResponse } from "../proxy/stream";
 import { Connection, ServerChannel } from "ssh2";
-
-class StatisticHandler implements Statistic {
-  inboundTraffic: number = 0;
-  outboundTraffic: number = 0;
-  traffic: number = 0;
-  requests: number = 0;
-  responses: number = 0;
-
-  inboundChunk(chunk: Buffer) {
-    console.log(`chunk in type: ${chunk.byteLength}, size: ${chunk.length}`);
-    this.inboundTraffic += chunk.length;
-    this.traffic += chunk.length;
-  }
-  outboundChunk(chunk: Buffer) {
-    console.log(`chunk out type: ${chunk.byteLength}, size: ${chunk.length}`);
-    this.outboundTraffic += chunk.length;
-    this.traffic += chunk.length;
-  }
-
-  request() {
-    this.requests++;
-  }
-
-  response() {
-    this.responses++;
-  }
-}
+import { TunnelStatistic } from "./tunnel-statistic";
 
 export abstract class SshTunnel extends EventEmitter {
-  statistic = new StatisticHandler();
+  statistic = new TunnelStatistic();
 
   private channel: ServerChannel | null = null;
   private messagesBuffer: string[] = [];
@@ -84,8 +58,14 @@ export abstract class SshTunnel extends EventEmitter {
 
         socket.pipe(sshChannel).pipe(socket);
 
-        socket.on("data", (chunk) => this.statistic.inboundChunk(chunk));
-        sshChannel.on("data", (chunk) => this.statistic.outboundChunk(chunk));
+        socket.on("data", (chunk) => {
+          this.statistic.inboundChunk(chunk);
+          this.emit("data", chunk, "inbound", this.address, this.port);
+        });
+        sshChannel.on("data", (chunk) => {
+          this.statistic.outboundChunk(chunk);
+          this.emit("data", chunk, "outbound", this.address, this.port);
+        });
 
         socket.on("end", () => this.statistic.request());
         sshChannel.on("end", () => this.statistic.response());

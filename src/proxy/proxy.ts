@@ -3,13 +3,27 @@ import { TunnelStorage } from "./tunnel-storage";
 import { Tunnel } from "./tunnel";
 import { ServersController } from "./servers-controller";
 import { Socket } from "net";
+import EventEmitter from "events";
 
-export class ProxyServer {
+export declare interface ProxyServer {
+  on(
+    event: "traffic",
+    listener: (
+      chunk: Buffer,
+      direction: "inbound" | "outbound",
+      address: string | null,
+      port: string | null
+    ) => void
+  );
+}
+
+export class ProxyServer extends EventEmitter {
   private sshServer: SshServerInterface;
   private proxyServer: ServersController;
   private tunnelStorage: TunnelStorage;
 
   constructor() {
+    super();
     this.sshServer = new SshServer();
     this.proxyServer = new ServersController();
     this.tunnelStorage = new TunnelStorage();
@@ -34,6 +48,8 @@ export class ProxyServer {
     } else {
       tunnel.channelWrite(`Proxy opened on ${tunnel.port} port\n`);
     }
+
+    tunnel.on("data", (...args) => this.emit("traffic", ...args));
 
     tunnel.on("close", () => {
       this.proxyServer.deleteTunnel(tunnel);

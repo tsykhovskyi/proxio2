@@ -8,6 +8,8 @@ export interface Statistic {
   responses: number;
 }
 
+// type Traffic = Property<>;
+
 export interface Tunnel {
   /**
    * If tunnel HTTP or TCP
@@ -20,8 +22,20 @@ export interface Tunnel {
   statistic: Readonly<Statistic>;
 
   serve(socket: Socket);
+
   channelWrite(message: string): void;
 
+  on(
+    event: "data",
+    listener: (
+      chunk: Buffer,
+      direction: "inbound" | "outbound",
+      address: string | null,
+      port: string | null
+    ) => void
+  );
+
   on(event: "close", listener: () => void);
+
   on(event: "tcp-forward-error", listener: (err: Error) => void);
 }

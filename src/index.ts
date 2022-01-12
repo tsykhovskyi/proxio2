@@ -7,7 +7,10 @@ proxy.run();
 const monitor = new Monitor();
 monitor.run();
 
-process.on("SIGINT", () => {
-  proxy.stop();
-  monitor.stop();
-});
+proxy.on("traffic", (...args) => monitor.traffic(...args));
+
+// TODO close all connections
+// process.on("SIGINT", () => {
+//   proxy.stop();
+//   monitor.stop();
+// });

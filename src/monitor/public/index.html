@@ -6,5 +6,21 @@
 </head>
 <body>
 <h1>Proxy result</h1>
+
+<script>
+    let socket = new WebSocket("wss://monitor.localhost");
+
+    socket.onopen = ev => {
+        console.log('Opened', ev);
+    }
+
+    socket.onmessage = ev => {
+        console.log('From server', ev, ev.data);
+    }
+
+    socket.onclose = ev => {
+        console.log('Closed');
+    }
+</script>
 </body>
 </html>

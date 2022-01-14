@@ -2,19 +2,19 @@ import express from "express";
 import { Server } from "http";
 import { config } from "../config";
 import path from "path";
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
+import { TunnelPacket, TunnelPacketChunk } from "../proxy/contracts/tunnel";
 
 export class Monitor {
   private server: Server | null = null;
+  private sockets = new Set<WebSocket>();
 
-  traffic(
-    chunk: Buffer,
-    direction: "inbound" | "outbound",
-    address: string | null,
-    port: string | null
-  ) {
-    console.log(direction, address, port);
-    console.log(chunk.toString());
+  onTunnelPacket(packet: TunnelPacket) {
+    this.sockets.forEach((socket) => socket.send(JSON.stringify(packet)));
+  }
+
+  onTunnelPacketData(chunk: TunnelPacketChunk) {
+    this.sockets.forEach((socket) => socket.send(chunk.toJSON()));
   }
 
   run() {
@@ -44,11 +44,9 @@ export class Monitor {
   }
 
   private createWebSocketServer() {
-    // const url = `ws://${config.monitorSubDomain}.${config.domainName}/ws`;
     const wss = new WebSocketServer({ noServer: true });
     wss.on("connection", (socket, request) => {
-      socket.send("Hi there");
-      setTimeout(() => socket.close(1000, "Bye!"), 10000);
+      this.sockets.add(socket);
     });
 
     return wss;

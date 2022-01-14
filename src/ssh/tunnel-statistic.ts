@@ -1,4 +1,4 @@
-import { Statistic } from "../proxy/tunnel";
+import { Statistic } from "../proxy/contracts/tunnel";
 
 export class TunnelStatistic implements Statistic {
   inboundTraffic: number = 0;

@@ -2,11 +2,11 @@ import { emptyResponse, httpProxyNotFoundResponse, mutualPipe } from "./stream";
 import { createServer, Server, Socket } from "net";
 import { hostSearcher } from "./stream/host-searcher";
 import { readablePreProcess } from "./stream/readable-pre-process";
-import { Tunnel } from "./tunnel";
 import * as tls from "tls";
 import * as fs from "fs";
 import EventEmitter from "events";
 import { config } from "../config";
+import { Tunnel } from "./contracts/tunnel";
 
 export declare interface ServersController {
   on(

@@ -1,5 +1,5 @@
-import { Tunnel } from "./tunnel";
 import { config } from "../config";
+import { Tunnel } from "./contracts/tunnel";
 
 export class TunnelStorage {
   private tcpTunnels = new Map<number, Tunnel>();

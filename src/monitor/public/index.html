@@ -7,7 +7,31 @@
 <body>
 <h1>Proxy result</h1>
 
+<div id="traffic"></div>
+
 <script>
+    function newEvent(data, color) {
+        console.log('newww event');
+        const el = document.createElement('div');
+        el.style.border = '1px solid black'
+        el.style.padding = '5px';
+        if (color !== undefined) {
+            el.style.borderColor = color;
+        }
+        el.innerText = data;
+        document.getElementById('traffic').appendChild(el);
+
+    }
+
+    function bufToHex(buf) {
+        let res = '';
+        for (const byte of buf) {
+            res += byte.toString(16).padStart(2, '0');
+        }
+
+        return res;
+    }
+
     let socket = new WebSocket("wss://monitor.localhost");
 
     socket.onopen = ev => {
@@ -15,7 +39,20 @@
     }
 
     socket.onmessage = ev => {
-        console.log('From server', ev, ev.data);
+        if (ev.data instanceof Blob) {
+            ev.data.arrayBuffer().then(buf => {
+                const packetId = bufToHex(new Uint8Array(buf).slice(0, 8));
+                const chunkNum = new DataView(buf).getUint32(8);
+                const payload = new Uint8Array(buf).slice(12).buffer;
+                const dec = new TextDecoder();
+                const chunk = dec.decode(payload);
+
+                const result = 'Packet id: ' + packetId + '\nChunk nubmber: ' + chunkNum + '\n\n' + chunk;
+                newEvent(result, 'darkgreen');
+            })
+        } else {
+            newEvent(ev.data);
+        }
     }
 
     socket.onclose = ev => {

@@ -7,7 +7,10 @@ proxy.run();
 const monitor = new Monitor();
 monitor.run();
 
-proxy.on("traffic", (...args) => monitor.traffic(...args));
+proxy.on("tunnel-packet", (tunnel, packet) => monitor.onTunnelPacket(packet));
+proxy.on("tunnel-packet-data", (tunnel, chunk) =>
+  monitor.onTunnelPacketData(chunk)
+);
 
 // TODO close all connections
 // process.on("SIGINT", () => {

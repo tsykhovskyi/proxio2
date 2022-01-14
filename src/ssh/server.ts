@@ -2,8 +2,8 @@ import { Connection, Server } from "ssh2";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
 import { HttpSshTunnel, SshTunnel, TcpSshTunnel } from "./tunnel";
-import { Tunnel } from "../proxy/tunnel";
 import { config } from "../config";
+import { Tunnel } from "../proxy/contracts/tunnel";
 
 export interface TunnelRequest {
   bindAddr: string;

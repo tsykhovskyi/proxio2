@@ -1,19 +1,19 @@
 import { SshServer, SshServerInterface, TunnelRequest } from "../ssh/server";
 import { TunnelStorage } from "./tunnel-storage";
-import { Tunnel } from "./tunnel";
 import { ServersController } from "./servers-controller";
 import { Socket } from "net";
 import EventEmitter from "events";
+import { Tunnel, TunnelPacket, TunnelPacketChunk } from "./contracts/tunnel";
 
 export declare interface ProxyServer {
   on(
-    event: "traffic",
-    listener: (
-      chunk: Buffer,
-      direction: "inbound" | "outbound",
-      address: string | null,
-      port: string | null
-    ) => void
+    event: "tunnel-packet",
+    listener: (tunnel: Tunnel, packet: TunnelPacket) => void
+  );
+
+  on(
+    event: "tunnel-packet-data",
+    listener: (tunnel: Tunnel, chunk: TunnelPacketChunk) => void
   );
 }
 
@@ -49,7 +49,12 @@ export class ProxyServer extends EventEmitter {
       tunnel.channelWrite(`Proxy opened on ${tunnel.port} port\n`);
     }
 
-    tunnel.on("data", (...args) => this.emit("traffic", ...args));
+    tunnel.on("tunnel-packet", (packet) =>
+      this.emit("tunnel-packet", tunnel, packet)
+    );
+    tunnel.on("tunnel-packet-data", (chunk) =>
+      this.emit("tunnel-packet-data", tunnel, chunk)
+    );
 
     tunnel.on("close", () => {
       this.proxyServer.deleteTunnel(tunnel);

@@ -3,18 +3,20 @@ import { Server } from "http";
 import { config } from "../config";
 import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
-import { TunnelPacket, TunnelPacketChunk } from "../proxy/contracts/tunnel";
+import { Tunnel } from "../proxy/contracts/tunnel";
 
 export class Monitor {
   private server: Server | null = null;
   private sockets = new Set<WebSocket>();
 
-  onTunnelPacket(packet: TunnelPacket) {
-    this.sockets.forEach((socket) => socket.send(JSON.stringify(packet)));
-  }
-
-  onTunnelPacketData(chunk: TunnelPacketChunk) {
-    this.sockets.forEach((socket) => socket.send(chunk.toJSON()));
+  onTunnelOpened(tunnel: Tunnel) {
+    tunnel.on("tunnel-packet", (packet) => {
+      this.sockets.forEach((socket) => socket.send(JSON.stringify(packet)));
+    });
+    tunnel.on("tunnel-packet-data", (chunk) => {
+      this.sockets.forEach((socket) => socket.send(chunk.toJSON()));
+    });
+    tunnel.on("close", () => {});
   }
 
   run() {

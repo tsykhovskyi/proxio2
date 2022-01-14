@@ -4,6 +4,7 @@ import EventEmitter from "events";
 import { HttpSshTunnel, SshTunnel, TcpSshTunnel } from "./tunnel";
 import { config } from "../config";
 import { Tunnel } from "../proxy/contracts/tunnel";
+import { ShellChannel } from "./shell-channel";
 
 export interface TunnelRequest {
   bindAddr: string;
@@ -27,7 +28,6 @@ export interface SshServerInterface {
 
 export class SshServer extends EventEmitter implements SshServerInterface {
   private server: Server;
-  private connections = new Map<Connection, SshTunnel>();
 
   constructor() {
     super();
@@ -39,6 +39,8 @@ export class SshServer extends EventEmitter implements SshServerInterface {
   run() {
     this.server.on("connection", (connection) => {
       console.log("Client connected!");
+      let tunnel: SshTunnel | null = null;
+      let channel = new ShellChannel();
 
       connection
         .on("authentication", (ctx) => {
@@ -52,7 +54,8 @@ export class SshServer extends EventEmitter implements SshServerInterface {
 
           session.on("shell", (accept, reject) => {
             const chan = accept();
-            this.tunnelCmd(connection, (tunnel) => tunnel.setChannel(chan));
+            channel.setChannel(chan);
+
             // chan.on("data", (chunk) => {
             //   const buf = Buffer.from(chunk);
             //   chan.stdout.write("answerw: " + buf.toString());
@@ -91,7 +94,6 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             bindPort: info.bindPort,
             accept: (address?: string, port?: number) => {
               accept();
-              let tunnel: SshTunnel;
               if (address) {
                 tunnel = new HttpSshTunnel(
                   address,
@@ -103,8 +105,8 @@ export class SshServer extends EventEmitter implements SshServerInterface {
               } else {
                 throw new Error("Undefined tunnel type");
               }
-              this.connections.set(connection, tunnel);
 
+              channel.setTunnel(tunnel);
               this.emit("tunnel-opened", tunnel);
             },
             reject: reject.bind(this),
@@ -115,37 +117,19 @@ export class SshServer extends EventEmitter implements SshServerInterface {
       });
 
       connection.on("error", (err: Error) =>
-        this.tunnelCmd(connection, (tunnel) => {
-          this.connections.delete(connection);
-          tunnel.close("An error occurred. " + err.message);
-        })
+        tunnel?.close("An error occurred. " + err.message)
       );
-      // connection.on("close", () => this.tunnelCmd(connection, (tunnel) =>
-      //   tunnel.close("The client socket was closed.")
-      // ));
-
       connection.on("end", () =>
-        this.tunnelCmd(connection, (tunnel) => {
-          this.connections.delete(connection);
-          tunnel.close("The client socket disconnected");
-        })
+        tunnel?.close("The client socket disconnected")
       );
     });
 
-    this.server.listen(config.sshPort, "127.0.0.1", () => {
+    this.server.listen(config.sshPort, () => {
       console.log("Listening on port " + config.sshPort);
     });
   }
 
   stop() {
     this.server.close(() => console.log("SSH server is closed"));
-  }
-
-  private tunnelCmd(connection: Connection, cmd: (tunnel: SshTunnel) => void) {
-    const tunnel = this.connections.get(connection);
-    if (!tunnel) {
-      return;
-    }
-    cmd(tunnel);
   }
 }

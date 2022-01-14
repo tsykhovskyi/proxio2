@@ -43,13 +43,8 @@ export interface Tunnel {
 
   serve(socket: Socket);
 
-  channelWrite(message: string): void;
-
   on(event: "tunnel-packet", listener: (packet: TunnelPacket) => void);
-
   on(event: "tunnel-packet-data", listener: (chunk: TunnelPacketChunk) => void);
-
   on(event: "close", listener: () => void);
-
   on(event: "tcp-forward-error", listener: (err: Error) => void);
 }

@@ -15,9 +15,6 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;
   statistic = new TunnelStatistic();
 
-  private channel: ServerChannel | null = null;
-  private messagesBuffer: string[] = [];
-
   constructor(
     public readonly address: string,
     public readonly port: number,
@@ -29,21 +26,6 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
   close(reason: string) {
     console.log("Connection closed: ", reason);
     this.emit("close", reason);
-  }
-
-  setChannel(channel: ServerChannel) {
-    this.channel = channel;
-    for (const bufMsg of this.messagesBuffer) {
-      this.channel.write(bufMsg);
-    }
-  }
-
-  channelWrite(str: string) {
-    if (this.channel === null) {
-      this.messagesBuffer.push(str);
-      return;
-    }
-    this.channel.write(str);
   }
 
   serve(socket: Socket) {

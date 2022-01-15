@@ -30,7 +30,8 @@ export class Monitor {
   runServer(wss: WebSocketServer) {
     const app = express();
 
-    app.get("/", express.static(path.join(__dirname, "public")));
+    app.use(express.static(config.monitorApplicationDist));
+    // app.use(express.static(path.join(__dirname, "public")));
 
     const server = app.listen(config.monitorServerPort, () =>
       console.log(`Monitor set up on port ${config.monitorServerPort}`)

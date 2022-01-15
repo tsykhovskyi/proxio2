@@ -17,6 +17,11 @@ export const config = {
   monitorServerPort: toInt(process.env.MONITOR_SERVER_PORT, 81),
 
   /**
+   * Path to monitor application static folder.
+   */
+  monitorApplicationDist: path.join(__dirname, "../monitor-app/build"),
+
+  /**
    * SSH server config
    */
   sshPort: toInt(process.env.SSH_PORT, 22),

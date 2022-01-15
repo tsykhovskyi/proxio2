@@ -5,6 +5,7 @@ import { Connection, ServerChannel } from "ssh2";
 import { TunnelStatistic } from "./tunnel-statistic";
 import {
   Tunnel,
+  TunnelChunk,
   TunnelPacket,
   TunnelPacketState,
 } from "../proxy/contracts/tunnel";
@@ -60,30 +61,27 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
     const connectionId = randomBytes(8).toString("hex");
     let chunksCnt = 0;
     let trafficBytes = 0;
+    let openedTime = Date.now();
 
     const onStateChange = (state: TunnelPacketState) =>
       this.emit("tunnel-packet", <TunnelPacket>{
         id: connectionId,
-        time: Date.now(),
-        type: this.http ? "http" : "tcp",
+        timestamp: Date.now(),
         state,
         chunksCnt,
         trafficBytes,
       });
 
     const onChunk = (chunk: Buffer, direction: "inbound" | "outbound") => {
-      if (chunksCnt === 0) {
-        // Handle open event on first chunk
-        onStateChange("open");
-      }
-      trafficBytes += chunk.length;
-
-      this.emit("tunnel-packet-data", {
+      this.emit("tunnel-packet-data", <TunnelChunk>{
         connectionId,
         direction,
         chunkNumber: chunksCnt++,
+        time: Date.now() - openedTime,
         chunk,
       });
+
+      trafficBytes += chunk.length;
     };
 
     socket.on("error", () => onStateChange("error"));
@@ -91,7 +89,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
     socket.on("data", (chunk) => onChunk(chunk, "inbound"));
     sshChannel.on("data", (chunk) => onChunk(chunk, "outbound"));
 
-    // Start forwarding
+    onStateChange("open");
     socket.pipe(sshChannel).pipe(socket);
   }
 

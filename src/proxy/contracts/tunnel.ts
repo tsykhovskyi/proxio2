@@ -11,18 +11,18 @@ export interface Statistic {
 export type TunnelPacketState = "open" | "closed" | "error";
 
 export interface TunnelPacket {
-  id: string;
-  time: number; // in ms
-  type: "http" | "tcp";
+  id: string; // hexadecimal with length 16
+  timestamp: number; // in ms
   state: TunnelPacketState;
   chunksCnt: number;
   trafficBytes: number;
 }
 
 export interface TunnelChunk {
-  connectionId: string;
+  connectionId: string; // hexadecimal with length 16
   direction: "inbound" | "outbound";
   chunkNumber: number;
+  time: number; // time lasts after connection was opened in ms
   chunk: Buffer;
 }
 

@@ -4,17 +4,7 @@ import { config } from "../config";
 import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
 import { Tunnel } from "../proxy/contracts/tunnel";
-import { Buffer } from "buffer";
 import { encodeTunnelChunk } from "./buffer";
-
-/**
- * Position    Length
- * 0           1 byte    - direction: 0 - incoming, 1 - outgoing
- * 1 - 8       8 bytes   - chunk id
- * 9 - 12      4 bytes   - chunk sequence number
- * 13 - end    ...       - chunk payload
- */
-export interface TunnelChunkBuffer extends Buffer {}
 
 export class Monitor {
   private server: Server | null = null;
@@ -25,8 +15,10 @@ export class Monitor {
       this.sockets.forEach((socket) => socket.send(JSON.stringify(packet)));
     });
     tunnel.on("tunnel-packet-data", (chunk) => {
-      this.sockets.forEach((socket) => socket.send(encodeTunnelChunk(chunk)));
-    };);
+      this.sockets.forEach((socket) => {
+        socket.send(encodeTunnelChunk(chunk));
+      });
+    });
     tunnel.on("close", () => {});
   }
 

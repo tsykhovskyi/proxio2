@@ -41,14 +41,25 @@
     socket.onmessage = ev => {
         if (ev.data instanceof Blob) {
             ev.data.arrayBuffer().then(buf => {
-                const packetId = bufToHex(new Uint8Array(buf).slice(0, 8));
-                const chunkNum = new DataView(buf).getUint32(8);
-                const payload = new Uint8Array(buf).slice(12).buffer;
+                const dv = new DataView(buf);
+                const bufUint8Array = new Uint8Array(buf);
+
+                const direction = dv.getUint8(0) === 0 ? 'inbound' : 'outbound';
+                const packetId = bufToHex(bufUint8Array.slice(1, 9));
+                const chunkNum = dv.getUint32(9);
+                const payload = bufUint8Array.slice(13).buffer;
+
                 const dec = new TextDecoder();
                 const chunk = dec.decode(payload);
 
-                const result = 'Packet id: ' + packetId + '\nChunk nubmber: ' + chunkNum + '\n\n' + chunk;
-                newEvent(result, 'darkgreen');
+                const result = [
+                    'Packet id: ' + packetId,
+                    'Chunk number: ' + chunkNum,
+                    'Direction: ' + direction,
+                    '\n',
+                    chunk
+                ];
+                newEvent(result.join('\n'), 'darkgreen');
             })
         } else {
             newEvent(ev.data);

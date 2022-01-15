@@ -9,7 +9,6 @@ import {
   TunnelPacketState,
 } from "../proxy/contracts/tunnel";
 import { randomBytes } from "crypto";
-import { Duplex } from "stream";
 
 export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;
@@ -51,72 +50,49 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
   }
 
   /**
-   * Forward traffic:
+   * Forwards traffic:
    * - from Net socket to SSH channel (inbound traffic)
    * - from SSH channel to Net socket (outbound traffic)
+   *
+   * Listens socket, channel events to emit `tunnel-packet`, `tunnel-packet-data` events.
    */
   protected forwardSshChannel(socket: Socket, sshChannel: ServerChannel) {
-    socket.pipe(sshChannel).pipe(socket);
-
-    const channelId = randomBytes(8);
-    this.handleTunnelPacketEvents(channelId, socket, "in");
-    this.handleTunnelPacketEvents(channelId, sshChannel, "out");
-  }
-
-  /**
-   * Handles stream events to emit `tunnel-packet`, `tunnel-packet-data` events.
-   */
-  protected handleTunnelPacketEvents(
-    connectionId: Buffer,
-    stream: Duplex,
-    direction: "in" | "out"
-  ) {
-    const packetId = randomBytes(8);
+    const connectionId = randomBytes(8).toString("hex");
     let chunksCnt = 0;
     let trafficBytes = 0;
 
-    const createPacketUpd = (state: TunnelPacketState) =>
-      <TunnelPacket>{
-        id: packetId.toString("hex"),
-        connectionId: connectionId.toString("hex"),
+    const onStateChange = (state: TunnelPacketState) =>
+      this.emit("tunnel-packet", <TunnelPacket>{
+        id: connectionId,
         time: Date.now(),
         type: this.http ? "http" : "tcp",
-        direction,
         state,
-        chunksNumber: chunksCnt,
+        chunksCnt,
         trafficBytes,
-      };
+      });
 
-    let packetUpdateInterval;
-    stream.on("data", (chunk) => {
+    const onChunk = (chunk: Buffer, direction: "inbound" | "outbound") => {
       if (chunksCnt === 0) {
-        // Emit open event on first chunk
-        this.emit("tunnel-packet", createPacketUpd("open"));
-
-        // Update packet state each 2 seconds
-        packetUpdateInterval = setInterval(
-          () => this.emit("tunnel-packet", createPacketUpd("active")),
-          2000
-        );
+        // Handle open event on first chunk
+        onStateChange("open");
       }
+      trafficBytes += chunk.length;
 
-      // Create packet data payload
-      const packetChunk = new Buffer(12 + chunk.byteLength);
-      packetChunk.set(packetId, 0);
-      new DataView(packetChunk.buffer).setUint32(8, chunksCnt);
-      packetChunk.set(chunk, 12);
+      this.emit("tunnel-packet-data", {
+        connectionId,
+        direction,
+        chunkNumber: chunksCnt++,
+        chunk,
+      });
+    };
 
-      this.emit("tunnel-packet-data", packetChunk);
+    socket.on("error", () => onStateChange("error"));
+    socket.on("close", () => onStateChange("closed"));
+    socket.on("data", (chunk) => onChunk(chunk, "inbound"));
+    sshChannel.on("data", (chunk) => onChunk(chunk, "outbound"));
 
-      // Update counters
-      chunksCnt++;
-      trafficBytes += chunk.byteLength;
-    });
-
-    stream.on("end", () => {
-      clearInterval(packetUpdateInterval);
-      this.emit("tunnel-packet", createPacketUpd("closed"));
-    });
+    // Start forwarding
+    socket.pipe(sshChannel).pipe(socket);
   }
 
   abstract handleServeError(err: Error, socket: Socket);

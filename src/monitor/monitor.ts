@@ -5,6 +5,7 @@ import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
 import { Tunnel } from "../proxy/contracts/tunnel";
 import { encodeTunnelChunk } from "./buffer";
+import { Socket } from "net";
 
 export class Monitor {
   private server: Server | null = null;
@@ -31,7 +32,6 @@ export class Monitor {
     const app = express();
 
     app.use(express.static(config.monitorApplicationDist));
-    // app.use(express.static(path.join(__dirname, "public")));
 
     const server = app.listen(config.monitorServerPort, () =>
       console.log(`Monitor set up on port ${config.monitorServerPort}`)

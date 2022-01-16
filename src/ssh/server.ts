@@ -1,10 +1,10 @@
-import { Connection, Server } from "ssh2";
+import { Server } from "ssh2";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
 import { HttpSshTunnel, SshTunnel, TcpSshTunnel } from "./tunnel";
 import { config } from "../config";
 import { Tunnel } from "../proxy/contracts/tunnel";
-import { ShellChannel } from "./shell-channel";
+import { ChannelFactory } from "./pty/channel-factory";
 
 export interface TunnelRequest {
   bindAddr: string;
@@ -40,7 +40,9 @@ export class SshServer extends EventEmitter implements SshServerInterface {
     this.server.on("connection", (connection) => {
       console.log("Client connected!");
       let tunnel: SshTunnel | null = null;
-      let channel = new ShellChannel();
+
+      const ptyChannelFactory = new ChannelFactory();
+      ptyChannelFactory.getPtyChannel().then((pty) => pty.init());
 
       connection
         .on("authentication", (ctx) => {
@@ -52,26 +54,27 @@ export class SshServer extends EventEmitter implements SshServerInterface {
         .on("session", (accept, reject) => {
           const session = accept();
 
+          session.on("signal", (accept1, reject1, info) => {
+            console.log("SIGNAL", info);
+          });
+
           session.on("shell", (accept, reject) => {
             const chan = accept();
-            channel.setChannel(chan);
-
-            // chan.on("data", (chunk) => {
-            //   const buf = Buffer.from(chunk);
-            //   chan.stdout.write("answerw: " + buf.toString());
-            // });
-            // chan.on("end", () => {
-            //   console.log("end");
-            // });
-            // chan.on("exit", (code) => {
-            //   console.log("Exit with", code);
-            // });
-            // chan.write("AAAAAAAAAa\n");
+            ptyChannelFactory.setChannel(chan);
           });
 
-          session.on("pty", (accept, reject, info) => {
-            reject?.();
-          });
+          session
+            .on("pty", (accept, reject, info) => {
+              accept?.();
+              ptyChannelFactory.setPtyInfo(info);
+            })
+            .on("window-change", (accept, reject, info) => {
+              accept?.();
+              console.log("updated size", info);
+              ptyChannelFactory.getPtyChannel().then((pty) => {
+                pty.windowResize(info);
+              });
+            });
 
           session.on("close", () => {
             return;
@@ -106,7 +109,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
                 throw new Error("Undefined tunnel type");
               }
 
-              channel.setTunnel(tunnel);
+              ptyChannelFactory.setTunnel(tunnel);
               this.emit("tunnel-opened", tunnel);
             },
             reject: reject.bind(this),

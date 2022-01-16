@@ -1,11 +1,9 @@
 import express from "express";
 import { Server } from "http";
 import { config } from "../config";
-import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
 import { Tunnel } from "../proxy/contracts/tunnel";
 import { encodeTunnelChunk } from "./buffer";
-import { Socket } from "net";
 
 export class Monitor {
   private server: Server | null = null;

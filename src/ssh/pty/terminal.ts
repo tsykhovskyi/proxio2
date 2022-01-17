@@ -14,7 +14,11 @@ export class Terminal {
   private screen: Widgets.Screen;
   private infoBlock: Widgets.BoxElement;
 
-  constructor(private channel: ServerChannel, ptyInfo: PseudoTtyInfo) {
+  constructor(
+    private channel: ServerChannel,
+    ptyInfo: PseudoTtyInfo,
+    private closeCb: () => void
+  ) {
     this.rows = ptyInfo.rows;
     this.columns = ptyInfo.cols;
     this.term = ptyInfo["term"] ?? "ansi";
@@ -27,8 +31,6 @@ export class Terminal {
 
     this.render();
   }
-
-  init() {}
 
   setTitle(title: string) {
     this.screen.title = title;
@@ -58,7 +60,7 @@ export class Terminal {
     this.channel.emit("resize");
     // // XXX This fake resize event is needed for some terminals in order to
     // // have everything display correctly
-    // this.screen.program.emit("resize");
+    this.screen.program.emit("resize");
   }
 
   /**
@@ -68,6 +70,8 @@ export class Terminal {
     this.channel["rows"] = this.rows;
     this.channel["columns"] = this.columns;
     this.channel["isTTY"] = true;
+    this.channel["setRawMode"] = () => {};
+    this.channel.on("error", () => {});
   }
 
   private createScreen() {
@@ -75,8 +79,6 @@ export class Terminal {
       terminal: this.term,
       autoPadding: true,
       smartCSR: true,
-      width: "100%",
-      height: "100%",
       program: blessed.program({
         input: this.channel,
         output: this.channel,
@@ -87,25 +89,27 @@ export class Terminal {
     screen.program.attr("invisible", true);
 
     screen.key(["escape", "q", "C-c"], (ch, key) => {
-      console.log("key pressed", key);
-      this.channel.close();
+      this.screen.destroy();
+      this.closeCb();
     });
 
     return screen;
   }
 
   private createInfoBlock() {
-    return blessed.box({
+    const block = blessed.box({
       parent: this.screen,
       top: 0,
       left: 0,
       scrollable: false,
       height: 10,
-      content: "Hello",
+      content: "Hello there",
       tags: true,
       style: {
         fg: "white",
       },
     });
+    block.focus();
+    return block;
   }
 }

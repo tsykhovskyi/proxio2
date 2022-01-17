@@ -1,8 +1,13 @@
 import { Tunnel } from "../../proxy/contracts/tunnel";
 import { PseudoTtyInfo, ServerChannel } from "ssh2";
 import { Terminal, WindowSize } from "./terminal";
+import EventEmitter from "events";
 
-export class Channel {
+export declare interface Channel {
+  on(event: "close", listener: () => void);
+}
+
+export class Channel extends EventEmitter {
   private terminal: Terminal;
 
   constructor(
@@ -10,7 +15,8 @@ export class Channel {
     sshChannel: ServerChannel,
     info: PseudoTtyInfo
   ) {
-    this.terminal = new Terminal(sshChannel, info);
+    super();
+    this.terminal = new Terminal(sshChannel, info, () => this.emit("close"));
   }
 
   init() {

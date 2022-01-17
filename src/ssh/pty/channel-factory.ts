@@ -3,23 +3,20 @@ import { Tunnel } from "../../proxy/contracts/tunnel";
 import { Channel } from "./channel";
 
 export class ChannelFactory {
-  private channel: Promise<ServerChannel>;
   private channelResolver = (channel: ServerChannel) => {};
-
-  private tunnel: Promise<Tunnel>;
   private tunnelResolver = (tunnel: Tunnel) => {};
-
-  private ptyInfo: Promise<PseudoTtyInfo>;
   private ptyInfoResolver = (info: PseudoTtyInfo) => {};
 
+  public readonly result: Promise<Channel>;
+
   constructor() {
-    this.channel = new Promise<ServerChannel>(
-      (res) => (this.channelResolver = res)
-    );
-    this.tunnel = new Promise<Tunnel>((res) => (this.tunnelResolver = res));
-    this.ptyInfo = new Promise<PseudoTtyInfo>(
-      (res) => (this.ptyInfoResolver = res)
-    );
+    this.result = Promise.all([
+      new Promise<Tunnel>((res) => (this.tunnelResolver = res)),
+      new Promise<ServerChannel>((res) => (this.channelResolver = res)),
+      new Promise<PseudoTtyInfo>((res) => (this.ptyInfoResolver = res)),
+    ]).then(([tunnel, channel, info]) => {
+      return new Channel(tunnel, channel, info);
+    });
   }
 
   setChannel(channel: ServerChannel) {
@@ -32,13 +29,5 @@ export class ChannelFactory {
 
   setPtyInfo(info: PseudoTtyInfo) {
     this.ptyInfoResolver(info);
-  }
-
-  async getPtyChannel() {
-    return Promise.all([this.tunnel, this.channel, this.ptyInfo]).then(
-      ([tunnel, channel, info]) => {
-        return new Channel(tunnel, channel, info);
-      }
-    );
   }
 }

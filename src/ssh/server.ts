@@ -43,7 +43,12 @@ export class SshServer extends EventEmitter implements SshServerInterface {
       let tunnel: SshTunnel | null = null;
 
       const ptyChannelFactory = new ChannelFactory();
-      ptyChannelFactory.getPtyChannel().then((pty) => pty.init());
+      ptyChannelFactory.result.then((pty) => {
+        pty.init();
+        pty.on("close", () => {
+          connection.end();
+        });
+      });
 
       connection
         .on("authentication", (ctx) => {
@@ -55,22 +60,20 @@ export class SshServer extends EventEmitter implements SshServerInterface {
         .on("session", (accept, reject) => {
           const session = accept();
 
-          session.on("signal", (accept1, reject1, info) => {
-            console.log("SIGNAL", info);
-          });
-
           session.on("shell", (accept, reject) => {
-            ptyChannelFactory.setChannel(accept());
+            const channel = accept();
+            ptyChannelFactory.setChannel(channel);
           });
 
           session
             .on("pty", (accept, reject, info) => {
               accept?.();
               ptyChannelFactory.setPtyInfo(info);
+              return;
             })
             .on("window-change", (accept, reject, info) => {
               accept?.();
-              ptyChannelFactory.getPtyChannel().then((pty) => {
+              ptyChannelFactory.result.then((pty) => {
                 pty.windowResize(info);
               });
             });
@@ -82,7 +85,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
 
       connection.on("request", (accept, reject, name, info) => {
         if (accept === undefined || reject === undefined) {
-          throw new Error();
+          return;
         }
 
         if (name === "tcpip-forward") {
@@ -100,7 +103,10 @@ export class SshServer extends EventEmitter implements SshServerInterface {
               ptyChannelFactory.setTunnel(tunnel);
               this.emit("tunnel-opened", tunnel);
             },
-            reject: reject.bind(this),
+            reject: () => {
+              reject();
+              connection.end();
+            },
           });
         } else {
           reject();
@@ -110,9 +116,10 @@ export class SshServer extends EventEmitter implements SshServerInterface {
       connection.on("error", (err: Error) =>
         tunnel?.close("An error occurred. " + err.message)
       );
-      connection.on("end", () =>
-        tunnel?.close("The client socket disconnected")
-      );
+      connection.on("end", () => {
+        console.log("Closed by user");
+        tunnel?.close("The client socket disconnected");
+      });
     });
 
     this.server.listen(config.sshPort, () => {

@@ -63,7 +63,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
     let trafficBytes = 0;
     let openedTime = Date.now();
 
-    const onStateChange = (state: TunnelPacketState) =>
+    const onStateChange = (state: TunnelPacketState) => {
       this.emit("tunnel-packet", <TunnelPacket>{
         id: connectionId,
         timestamp: Date.now(),
@@ -71,6 +71,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
         chunksCnt,
         trafficBytes,
       });
+    };
 
     const onChunk = (chunk: Buffer, direction: "inbound" | "outbound") => {
       this.emit("tunnel-packet-data", <TunnelChunk>{
@@ -86,8 +87,14 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
 
     socket.on("error", () => onStateChange("error"));
     socket.on("close", () => onStateChange("closed"));
-    socket.on("data", (chunk) => onChunk(chunk, "inbound"));
-    sshChannel.on("data", (chunk) => onChunk(chunk, "outbound"));
+    socket.on("data", (chunk) => {
+      this.statistic.inboundChunk(chunk);
+      onChunk(chunk, "inbound");
+    });
+    sshChannel.on("data", (chunk) => {
+      this.statistic.outboundChunk(chunk);
+      onChunk(chunk, "outbound");
+    });
 
     onStateChange("open");
     socket.pipe(sshChannel).pipe(socket);

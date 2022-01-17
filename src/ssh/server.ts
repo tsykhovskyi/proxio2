@@ -5,6 +5,7 @@ import { HttpSshTunnel, SshTunnel, TcpSshTunnel } from "./tunnel";
 import { config } from "../config";
 import { Tunnel } from "../proxy/contracts/tunnel";
 import { ChannelFactory } from "./pty/channel-factory";
+import { createTunnel } from "./tunnel-factory";
 
 export interface TunnelRequest {
   bindAddr: string;
@@ -59,8 +60,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
           });
 
           session.on("shell", (accept, reject) => {
-            const chan = accept();
-            ptyChannelFactory.setChannel(chan);
+            ptyChannelFactory.setChannel(accept());
           });
 
           session
@@ -70,7 +70,6 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             })
             .on("window-change", (accept, reject, info) => {
               accept?.();
-              console.log("updated size", info);
               ptyChannelFactory.getPtyChannel().then((pty) => {
                 pty.windowResize(info);
               });
@@ -97,18 +96,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             bindPort: info.bindPort,
             accept: (address?: string, port?: number) => {
               accept();
-              if (address) {
-                tunnel = new HttpSshTunnel(
-                  address,
-                  config.httpPort,
-                  connection
-                );
-              } else if (port) {
-                tunnel = new TcpSshTunnel("127.0.0.1", port, connection);
-              } else {
-                throw new Error("Undefined tunnel type");
-              }
-
+              const tunnel = createTunnel(connection, address, port);
               ptyChannelFactory.setTunnel(tunnel);
               this.emit("tunnel-opened", tunnel);
             },

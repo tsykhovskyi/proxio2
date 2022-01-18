@@ -8,6 +8,14 @@ export interface Statistic {
   responses: number;
 }
 
+export interface TunnelRequest {
+  bindAddr: string;
+  bindPort: number;
+  username: string;
+  accept: (address: string, port: number) => void;
+  reject: () => void;
+}
+
 export type TunnelPacketState = "open" | "closed" | "error";
 
 export interface TunnelPacket {

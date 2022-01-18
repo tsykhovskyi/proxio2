@@ -1,19 +1,11 @@
 import { Server } from "ssh2";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
-import { SshTunnel } from "./tunnel";
+import { SshTunnel } from "./tunnel/tunnel";
 import { config } from "../config";
-import { Tunnel } from "../proxy/contracts/tunnel";
+import { Tunnel, TunnelRequest } from "../proxy/contracts/tunnel";
 import { ChannelFactory } from "./pty/channel-factory";
-import { createTunnel } from "./tunnel-factory";
-
-export interface TunnelRequest {
-  bindAddr: string;
-  bindPort: number;
-  username: string;
-  accept: (address: string, port: number) => void;
-  reject: () => void;
-}
+import { createTunnel } from "./tunnel/tunnel-factory";
 
 export interface SshServerInterface {
   run(): void;

@@ -1,7 +1,7 @@
 import { TunnelStorage } from "./tunnel-storage";
-import { TunnelRequest } from "../ssh/server";
 import { config } from "../config";
 import { generateAlphaNum } from "../helper/generator";
+import { TunnelRequest } from "./contracts/tunnel";
 
 type AddressRequest = {
   subdomain: string;

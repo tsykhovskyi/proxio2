@@ -1,9 +1,9 @@
-import { SshServer, SshServerInterface, TunnelRequest } from "../ssh/server";
+import { SshServer, SshServerInterface } from "../ssh/server";
 import { TunnelStorage } from "./tunnel-storage";
 import { ServersController } from "./servers-controller";
 import { Socket } from "net";
 import EventEmitter from "events";
-import { Tunnel } from "./contracts/tunnel";
+import { Tunnel, TunnelRequest } from "./contracts/tunnel";
 import { TunnelRequestHandler } from "./tunnel-request-handler";
 
 export declare interface ProxyServer {

@@ -1,6 +1,9 @@
 import EventEmitter from "events";
 import { Socket } from "net";
-import { mutualPipe, remoteHostIsUnreachableResponse } from "../proxy/stream";
+import {
+  mutualPipe,
+  remoteHostIsUnreachableResponse,
+} from "../../proxy/stream";
 import { Connection, ServerChannel } from "ssh2";
 import { TunnelStatistic } from "./tunnel-statistic";
 import {
@@ -8,9 +11,9 @@ import {
   TunnelChunk,
   TunnelPacket,
   TunnelPacketState,
-} from "../proxy/contracts/tunnel";
+} from "../../proxy/contracts/tunnel";
 import { randomBytes } from "crypto";
-import { config } from "../config";
+import { config } from "../../config";
 
 export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;
@@ -19,7 +22,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
   /**
    * For valid tunnelling `bindAddr` should be the same as requested by client.
    */
-  constructor(
+  protected constructor(
     public readonly hostname: string,
     private readonly bindAddr: string,
     public readonly port: number,

@@ -43,7 +43,6 @@ export class SshServer extends EventEmitter implements SshServerInterface {
       console.log("Client connected!");
       let username = "";
       let tunnel: SshTunnel | null = null;
-
       const ptyChannelFactory = new ChannelFactory();
       ptyChannelFactory.result.then((pty) => {
         pty.init();
@@ -55,18 +54,14 @@ export class SshServer extends EventEmitter implements SshServerInterface {
           username = ctx.username;
           ctx.accept();
         })
-        .on("ready", () => {
-          // console.log("Client authenticated!");
-        })
         .on("session", (accept, reject) => {
           const session = accept();
 
-          session.on("shell", (accept, reject) => {
-            const channel = accept();
-            ptyChannelFactory.setChannel(channel);
-          });
-
           session
+            .on("shell", (accept, reject) => {
+              const channel = accept();
+              ptyChannelFactory.setChannel(channel);
+            })
             .on("pty", (accept, reject, info) => {
               accept?.();
               ptyChannelFactory.setPtyInfo(info);
@@ -82,46 +77,43 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             console.log("session closed");
             return;
           });
-        });
-
-      connection.on("request", (accept, reject, name, info) => {
-        if (accept === undefined || reject === undefined) {
-          return;
-        }
-
-        if (name === "tcpip-forward") {
-          if (info.bindAddr == undefined || info.bindPort == undefined) {
-            reject();
+        })
+        .on("request", (accept, reject, name, info) => {
+          if (accept === undefined || reject === undefined) {
             return;
           }
 
-          this.emit("tunnel-requested", <TunnelRequest>{
-            bindAddr: info.bindAddr,
-            bindPort: info.bindPort,
-            username,
-            accept: (address?: string, port?: number) => {
-              accept(port ?? 0);
-              tunnel = createTunnel(connection, address, port);
-              ptyChannelFactory.setTunnel(tunnel);
-              this.emit("tunnel-opened", tunnel);
-            },
-            reject: () => {
-              console.log("tunnel open rejected");
+          if (name === "tcpip-forward") {
+            if (info.bindAddr == undefined || info.bindPort == undefined) {
               reject();
-              connection.end();
-            },
-          });
-        } else {
-          reject();
-        }
-      });
+              return;
+            }
 
-      connection.on("error", (err: Error) =>
-        tunnel?.close("An error occurred. " + err.message)
-      );
-      connection.on("end", () => {
-        tunnel?.close("The client socket disconnected");
-      });
+            this.emit("tunnel-requested", <TunnelRequest>{
+              bindAddr: info.bindAddr,
+              bindPort: info.bindPort,
+              username,
+              accept: (address: string, port: number) => {
+                accept(port ?? 0);
+                tunnel = createTunnel(connection, address, info.bindAddr, port);
+                ptyChannelFactory.setTunnel(tunnel);
+                this.emit("tunnel-opened", tunnel);
+              },
+              reject: () => {
+                reject();
+                connection.end();
+              },
+            });
+          } else {
+            reject();
+          }
+        })
+        .on("error", (err: Error) =>
+          tunnel?.close("An error occurred. " + err.message)
+        )
+        .on("end", () => {
+          tunnel?.close("The client socket disconnected");
+        });
     });
 
     this.server.listen(config.sshPort, () => {

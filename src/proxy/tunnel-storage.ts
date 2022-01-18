@@ -15,7 +15,7 @@ export class TunnelStorage {
 
   delete(tunnel: Tunnel) {
     if (tunnel.port === config.httpPort) {
-      this.httpTunnels.delete(tunnel.address);
+      this.httpTunnels.delete(tunnel.hostname);
     }
 
     this.tcpTunnels.delete(tunnel.port);
@@ -41,11 +41,11 @@ export class TunnelStorage {
   }
 
   private addHttpTunnel(tunnel: Tunnel): boolean {
-    if (this.httpTunnels.has(tunnel.address)) {
+    if (this.httpTunnels.has(tunnel.hostname)) {
       return false;
     }
 
-    this.httpTunnels.set(tunnel.address, tunnel);
+    this.httpTunnels.set(tunnel.hostname, tunnel);
     return true;
   }
 

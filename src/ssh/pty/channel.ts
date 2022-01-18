@@ -20,7 +20,7 @@ export class Channel extends EventEmitter {
   }
 
   init() {
-    this.terminal.setTitle(`Proxio tunnel: ${this.tunnel.address}`);
+    this.terminal.setTitle(`Proxio tunnel: ${this.tunnel.hostname}`);
 
     this.updateStatistics();
     this.addEventListeners();
@@ -31,8 +31,8 @@ export class Channel extends EventEmitter {
       ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
       null,
       ["Web interface", "https://monitor.localhost:3000"],
-      ["Http forwarding", `http://${this.tunnel.address}`],
-      ["Https forwarding", `https://${this.tunnel.address}`],
+      ["Http forwarding", `http://${this.tunnel.hostname}`],
+      ["Https forwarding", `https://${this.tunnel.hostname}`],
       null,
       ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
       [

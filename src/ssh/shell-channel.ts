@@ -23,7 +23,7 @@ export class ShellChannel {
   private onTunnelAdded(tunnel: Tunnel) {
     if (tunnel.http) {
       this.write(
-        `Proxy opened on\nhttp://${tunnel.address}\nhttps://${tunnel.address}\n`
+        `Proxy opened on\nhttp://${tunnel.hostname}\nhttps://${tunnel.hostname}\n`
       );
     } else {
       this.write(`Proxy opened on ${tunnel.port} port\n`);

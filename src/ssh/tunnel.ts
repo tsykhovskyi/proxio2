@@ -10,13 +10,18 @@ import {
   TunnelPacketState,
 } from "../proxy/contracts/tunnel";
 import { randomBytes } from "crypto";
+import { config } from "../config";
 
 export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;
   statistic = new TunnelStatistic();
 
+  /**
+   * For valid tunnelling `bindAddr` should be the same as requested by client.
+   */
   constructor(
-    public readonly address: string,
+    public readonly hostname: string,
+    private readonly bindAddr: string,
     public readonly port: number,
     protected sshConnection: Connection
   ) {
@@ -34,8 +39,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
     }
 
     this.sshConnection.forwardOut(
-      // todo bug. fix - forward address to originally requested from user
-      this.address,
+      this.bindAddr,
       this.port,
       socket.remoteAddress,
       socket.remotePort,
@@ -107,6 +111,10 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
 export class TcpSshTunnel extends SshTunnel {
   readonly http = false;
 
+  constructor(bindPort: number, sshConnection: Connection) {
+    super("127.0.0.1", "127.0.0.1", bindPort, sshConnection);
+  }
+
   handleServeError(err: Error, socket: Socket) {
     socket.end();
   }
@@ -114,6 +122,10 @@ export class TcpSshTunnel extends SshTunnel {
 
 export class HttpSshTunnel extends SshTunnel {
   readonly http = true;
+
+  constructor(hostname: string, bindAddr: string, sshConnection: Connection) {
+    super(hostname, bindAddr, config.httpPort, sshConnection);
+  }
 
   handleServeError(err: Error, socket: Socket) {
     mutualPipe(

@@ -32,7 +32,14 @@ export interface Tunnel {
    */
   http: boolean;
 
-  readonly address: string;
+  /**
+   * Proxy public address (for HTTP connections)
+   */
+  readonly hostname: string;
+
+  /**
+   * Proxy public port(for TCP connections)
+   */
   readonly port: number;
 
   statistic: Readonly<Statistic>;

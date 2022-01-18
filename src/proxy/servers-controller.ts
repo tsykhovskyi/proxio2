@@ -22,7 +22,7 @@ export class ServersController extends EventEmitter {
 
   addTunnel(tunnel: Tunnel): void {
     if (tunnel.http) {
-      this.httpAddresses.add(tunnel.address);
+      this.httpAddresses.add(tunnel.hostname);
     } else {
       this.runTcpServer(tunnel.port);
     }
@@ -30,7 +30,7 @@ export class ServersController extends EventEmitter {
 
   deleteTunnel(tunnel: Tunnel) {
     if (tunnel.http) {
-      this.httpAddresses.delete(tunnel.address);
+      this.httpAddresses.delete(tunnel.hostname);
     } else {
       this.stopTcpServer(tunnel.port);
     }

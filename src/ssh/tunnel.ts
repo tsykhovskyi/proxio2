@@ -111,8 +111,8 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
 export class TcpSshTunnel extends SshTunnel {
   readonly http = false;
 
-  constructor(bindPort: number, sshConnection: Connection) {
-    super("127.0.0.1", "127.0.0.1", bindPort, sshConnection);
+  constructor(bindAddr: string, bindPort: number, sshConnection: Connection) {
+    super("127.0.0.1", bindAddr, bindPort, sshConnection);
   }
 
   handleServeError(err: Error, socket: Socket) {

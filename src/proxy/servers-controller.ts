@@ -46,7 +46,7 @@ export class ServersController extends EventEmitter {
     }
   }
 
-  private async onConnection(socket: Socket) {
+  private async onHttpConnection(socket: Socket) {
     socket.on("error", (err) => {
       console.log(err.stack);
     });
@@ -80,7 +80,7 @@ export class ServersController extends EventEmitter {
 
   private runHttpServer() {
     const httpServer = createServer();
-    httpServer.on("connection", this.onConnection.bind(this));
+    httpServer.on("connection", this.onHttpConnection.bind(this));
     httpServer.listen(config.httpPort, () =>
       console.log(`Proxy port ${config.httpPort} is listening...`)
     );
@@ -91,7 +91,7 @@ export class ServersController extends EventEmitter {
         key: fs.readFileSync(config.sslCertificateKeyPath),
         cert: fs.readFileSync(config.sslCertificatePath),
       },
-      this.onConnection.bind(this)
+      this.onHttpConnection.bind(this)
     );
     tlsServer.listen(config.httpsPort, () =>
       console.log(`Proxy port ${config.httpsPort} is listening...`)
@@ -109,9 +109,6 @@ export class ServersController extends EventEmitter {
       const { remoteAddress, remotePort } = socket;
       if (remoteAddress == undefined || remotePort == undefined) {
         return socket.end();
-      }
-      if (!this.servers.has(remotePort)) {
-        socket.end();
       }
       this.emit("tcp-connection", bindPort, socket);
     });

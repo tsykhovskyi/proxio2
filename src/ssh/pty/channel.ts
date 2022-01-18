@@ -27,24 +27,43 @@ export class Channel extends EventEmitter {
   }
 
   private updateStatistics() {
-    this.terminal.setInfo([
-      ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
-      null,
-      ["Web interface", "https://monitor.localhost:3000"],
-      ["Http forwarding", `http://${this.tunnel.hostname}`],
-      ["Https forwarding", `https://${this.tunnel.hostname}`],
-      null,
-      ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
-      [
-        "",
+    if (this.tunnel.http) {
+      this.terminal.setInfo([
+        ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
+        null,
+        ["Web interface", "https://monitor.localhost:3000"],
+        ["Http forwarding", `http://${this.tunnel.hostname}`],
+        ["Https forwarding", `https://${this.tunnel.hostname}`],
+        null,
+        ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
         [
-          this.tunnel.statistic.inboundTraffic,
-          this.tunnel.statistic.outboundTraffic,
-        ]
-          .map((s) => s.toString().padEnd(12))
-          .join(""),
-      ],
-    ]);
+          "",
+          [
+            this.tunnel.statistic.inboundTraffic,
+            this.tunnel.statistic.outboundTraffic,
+          ]
+            .map((s) => s.toString().padEnd(12))
+            .join(""),
+        ],
+      ]);
+    } else {
+      this.terminal.setInfo([
+        ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
+        null,
+        ["Web interface", "https://monitor.localhost:3000"],
+        ["TCP forwarding", `Port: ${this.tunnel.port}`],
+        ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
+        [
+          "",
+          [
+            this.tunnel.statistic.inboundTraffic,
+            this.tunnel.statistic.outboundTraffic,
+          ]
+            .map((s) => s.toString().padEnd(12))
+            .join(""),
+        ],
+      ]);
+    }
   }
 
   windowResize(size: WindowSize) {

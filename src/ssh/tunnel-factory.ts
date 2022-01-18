@@ -5,13 +5,10 @@ export function createTunnel(
   connection: Connection,
   address: string,
   bindAddress: string,
-  port: number
+  bindPort: number
 ) {
-  if (address) {
+  if (bindPort === 80) {
     return new HttpSshTunnel(address, bindAddress, connection);
-  } else if (port) {
-    return new TcpSshTunnel(port, connection);
-  } else {
-    throw new Error("Undefined tunnel type");
   }
+  return new TcpSshTunnel(bindAddress, bindPort, connection);
 }

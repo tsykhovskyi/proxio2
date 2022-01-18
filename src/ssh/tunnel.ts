@@ -34,6 +34,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
     }
 
     this.sshConnection.forwardOut(
+      // todo bug. fix - forward address to originally requested from user
       this.address,
       this.port,
       socket.remoteAddress,

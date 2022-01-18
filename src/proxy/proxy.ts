@@ -4,6 +4,7 @@ import { ServersController } from "./servers-controller";
 import { Socket } from "net";
 import EventEmitter from "events";
 import { Tunnel } from "./contracts/tunnel";
+import { TunnelRequestHandler } from "./tunnel-request-handler";
 
 export declare interface ProxyServer {
   on(
@@ -13,33 +14,39 @@ export declare interface ProxyServer {
 }
 
 export class ProxyServer extends EventEmitter {
-  private sshServer: SshServerInterface;
-  private proxyServer: ServersController;
-  private tunnelStorage: TunnelStorage;
+  private readonly sshServer: SshServerInterface;
+  private readonly serversController: ServersController;
+  private readonly tunnelStorage: TunnelStorage;
+  private readonly requestHandler: TunnelRequestHandler;
 
   constructor() {
     super();
     this.sshServer = new SshServer();
-    this.proxyServer = new ServersController();
+    this.serversController = new ServersController();
     this.tunnelStorage = new TunnelStorage();
+    this.requestHandler = new TunnelRequestHandler(this.tunnelStorage);
   }
 
   onTunnelRequest(request: TunnelRequest) {
-    if (!this.tunnelStorage.find(request.bindAddr, request.bindPort)) {
-      request.accept(request.bindAddr, request.bindPort);
-    } else {
-      request.reject();
+    // request.accept(request.bindAddr, request.bindPort);
+    // return;
+
+    const res = this.requestHandler.handle(request);
+    if (res === false) {
+      return request.reject();
     }
+
+    request.accept(res.hostname, res.port);
   }
 
   onTunnelOpened(tunnel: Tunnel) {
     this.emit("tunnel-opened", tunnel);
 
-    this.proxyServer.addTunnel(tunnel);
+    this.serversController.addTunnel(tunnel);
     this.tunnelStorage.add(tunnel);
 
     tunnel.on("close", () => {
-      this.proxyServer.deleteTunnel(tunnel);
+      this.serversController.deleteTunnel(tunnel);
       this.tunnelStorage.delete(tunnel);
     });
   }
@@ -64,15 +71,21 @@ export class ProxyServer extends EventEmitter {
     this.sshServer.on("tunnel-requested", this.onTunnelRequest.bind(this));
     this.sshServer.on("tunnel-opened", this.onTunnelOpened.bind(this));
 
-    this.proxyServer.on("http-connection", this.onHttpConnection.bind(this));
-    this.proxyServer.on("tcp-connection", this.onTcpConnection.bind(this));
+    this.serversController.on(
+      "http-connection",
+      this.onHttpConnection.bind(this)
+    );
+    this.serversController.on(
+      "tcp-connection",
+      this.onTcpConnection.bind(this)
+    );
 
     this.sshServer.run();
-    this.proxyServer.run();
+    this.serversController.run();
   }
 
   stop() {
-    this.proxyServer.stop();
+    this.serversController.stop();
     this.sshServer.stop();
   }
 }

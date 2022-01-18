@@ -1,7 +1,7 @@
 import { Server } from "ssh2";
 import { readFileSync } from "fs";
 import EventEmitter from "events";
-import { HttpSshTunnel, SshTunnel, TcpSshTunnel } from "./tunnel";
+import { SshTunnel } from "./tunnel";
 import { config } from "../config";
 import { Tunnel } from "../proxy/contracts/tunnel";
 import { ChannelFactory } from "./pty/channel-factory";
@@ -10,7 +10,8 @@ import { createTunnel } from "./tunnel-factory";
 export interface TunnelRequest {
   bindAddr: string;
   bindPort: number;
-  accept: (address?: string, port?: number) => void;
+  username: string;
+  accept: (address: string, port: number) => void;
   reject: () => void;
 }
 
@@ -40,22 +41,22 @@ export class SshServer extends EventEmitter implements SshServerInterface {
   run() {
     this.server.on("connection", (connection) => {
       console.log("Client connected!");
+      let username = "";
       let tunnel: SshTunnel | null = null;
 
       const ptyChannelFactory = new ChannelFactory();
       ptyChannelFactory.result.then((pty) => {
         pty.init();
-        pty.on("close", () => {
-          connection.end();
-        });
+        pty.on("close", () => connection.end());
       });
 
       connection
         .on("authentication", (ctx) => {
+          username = ctx.username;
           ctx.accept();
         })
         .on("ready", () => {
-          console.log("Client authenticated!");
+          // console.log("Client authenticated!");
         })
         .on("session", (accept, reject) => {
           const session = accept();
@@ -69,7 +70,6 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             .on("pty", (accept, reject, info) => {
               accept?.();
               ptyChannelFactory.setPtyInfo(info);
-              return;
             })
             .on("window-change", (accept, reject, info) => {
               accept?.();
@@ -79,6 +79,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             });
 
           session.on("close", () => {
+            console.log("session closed");
             return;
           });
         });
@@ -97,13 +98,15 @@ export class SshServer extends EventEmitter implements SshServerInterface {
           this.emit("tunnel-requested", <TunnelRequest>{
             bindAddr: info.bindAddr,
             bindPort: info.bindPort,
+            username,
             accept: (address?: string, port?: number) => {
-              accept();
-              const tunnel = createTunnel(connection, address, port);
+              accept(port ?? 0);
+              tunnel = createTunnel(connection, address, port);
               ptyChannelFactory.setTunnel(tunnel);
               this.emit("tunnel-opened", tunnel);
             },
             reject: () => {
+              console.log("tunnel open rejected");
               reject();
               connection.end();
             },
@@ -117,7 +120,6 @@ export class SshServer extends EventEmitter implements SshServerInterface {
         tunnel?.close("An error occurred. " + err.message)
       );
       connection.on("end", () => {
-        console.log("Closed by user");
         tunnel?.close("The client socket disconnected");
       });
     });

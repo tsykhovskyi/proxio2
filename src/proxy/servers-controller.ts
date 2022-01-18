@@ -61,11 +61,13 @@ export class ServersController extends EventEmitter {
       return mutualPipe(socket, emptyResponse());
     }
 
-    const monitorUrl = `${config.monitorSubDomain}.${config.domainName}`;
-    if (host === monitorUrl || host.endsWith("." + monitorUrl)) {
-      // Forward to monitor app socket
+    if (
+      host === config.monitorDomainName ||
+      host.endsWith("." + config.monitorDomainName)
+    ) {
+      // Forward to monitor app private socket
       const forwarder = new Socket();
-      forwarder.connect(config.monitorServerPort, "127.0.0.1", () => {
+      forwarder.connect(config.monitorPrivatePort, "127.0.0.1", () => {
         socket.pipe(forwarder).pipe(socket);
       });
       return;

@@ -31,8 +31,8 @@ export class Monitor {
 
     app.use(express.static(config.monitorApplicationDist));
 
-    const server = app.listen(config.monitorServerPort, () =>
-      console.log(`Monitor set up on port ${config.monitorServerPort}`)
+    const server = app.listen(config.monitorPrivatePort, () =>
+      console.log(`Monitor set up on port ${config.monitorPrivatePort}`)
     );
     server.on("upgrade", (req, socket, head) => {
       wss.handleUpgrade(req, socket, head, (wsClient) => {

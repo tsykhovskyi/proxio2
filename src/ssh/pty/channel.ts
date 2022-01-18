@@ -2,6 +2,11 @@ import { Tunnel } from "../../proxy/contracts/tunnel";
 import { PseudoTtyInfo, ServerChannel } from "ssh2";
 import { Terminal, WindowSize } from "./terminal";
 import EventEmitter from "events";
+import {
+  tunnelHttpsUrl,
+  tunnelHttpUrl,
+  tunnelMonitorUrl,
+} from "../../proxy/urls";
 
 export declare interface Channel {
   on(event: "close", listener: () => void);
@@ -31,9 +36,9 @@ export class Channel extends EventEmitter {
       this.terminal.setInfo([
         ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
         null,
-        ["Web interface", "https://monitor.localhost:3000"],
-        ["Http forwarding", `http://${this.tunnel.hostname}`],
-        ["Https forwarding", `https://${this.tunnel.hostname}`],
+        ["Web interface", tunnelMonitorUrl(this.tunnel)],
+        ["Http forwarding", tunnelHttpUrl(this.tunnel)],
+        ["Https forwarding", tunnelHttpsUrl(this.tunnel)],
         null,
         ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
         [
@@ -50,7 +55,6 @@ export class Channel extends EventEmitter {
       this.terminal.setInfo([
         ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
         null,
-        ["Web interface", "https://monitor.localhost:3000"],
         ["TCP forwarding", `Port: ${this.tunnel.port}`],
         ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
         [

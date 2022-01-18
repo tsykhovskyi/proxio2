@@ -24,23 +24,20 @@ export function tunnelHttpsUrl(tunnel: Tunnel) {
 }
 
 export function monitorUrl() {
-  return (
-    "https://" +
-    config.monitorDomainName +
-    (config.httpsPort !== 443 ? ":" + config.httpsPort : "")
-  );
+  return "https://" + config.monitorDomainName + monitorAppPortSuffix();
 }
 
 export function tunnelMonitorUrl(tunnel: Tunnel) {
   if (!tunnel.http) {
     return "";
   }
+
   return (
     "https://" +
     tunnelSubdomain(tunnel) +
     "." +
     config.monitorDomainName +
-    (config.httpsPort !== 443 ? ":" + config.httpsPort : "")
+    monitorAppPortSuffix()
   );
 }
 
@@ -49,4 +46,12 @@ function tunnelSubdomain(tunnel: Tunnel): string {
     0,
     tunnel.hostname.lastIndexOf(config.domainName) - 1
   );
+}
+
+function monitorAppPortSuffix() {
+  return config.monitorAppDevPort
+    ? ":" + config.monitorAppDevPort
+    : config.httpsPort !== 443
+    ? ":" + config.httpsPort
+    : "";
 }

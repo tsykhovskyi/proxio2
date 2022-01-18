@@ -10,6 +10,7 @@ export const config = {
    * Subdomain prefix for monitoring service. Ex. "https://monitor.localhost"
    */
   monitorDomainName: process.env.MONITOR_DOMAIN ?? "monitor.localhost",
+  monitorAppDevPort: process.env.MONITOR_APP_DEV_PORT,
 
   /**
    * Non-public port for serving monitor application

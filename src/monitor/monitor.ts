@@ -4,6 +4,9 @@ import { config } from "../config";
 import { WebSocket, WebSocketServer } from "ws";
 import { Tunnel } from "../proxy/contracts/tunnel";
 import { encodeTunnelChunk } from "./buffer";
+import { logger } from "../helper/logger";
+
+const log = logger("MONITOR");
 
 export class Monitor {
   private server: Server | null = null;
@@ -32,9 +35,12 @@ export class Monitor {
     app.use(express.static(config.monitorApplicationDist));
 
     const server = app.listen(config.monitorPrivatePort, () =>
-      console.log(`Monitor set up on port ${config.monitorPrivatePort}`)
+      log(`Monitor set up on port ${config.monitorPrivatePort}`)
     );
     server.on("upgrade", (req, socket, head) => {
+      if (req.url !== "/traffic") {
+        socket.end();
+      }
       wss.handleUpgrade(req, socket, head, (wsClient) => {
         wss.emit("connection", wsClient, req);
       });
@@ -44,13 +50,18 @@ export class Monitor {
   }
 
   stop() {
-    this.server?.close(() => console.log("Monitor is closed"));
+    this.server?.close(() => log("Monitor is closed"));
   }
 
   private createWebSocketServer() {
     const wss = new WebSocketServer({ noServer: true });
     wss.on("connection", (socket, request) => {
       this.sockets.add(socket);
+      log("new connection");
+      socket.on("close", (code) => {
+        log("remove connection");
+        this.sockets.delete(socket);
+      });
     });
 
     return wss;

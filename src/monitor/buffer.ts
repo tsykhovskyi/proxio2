@@ -12,10 +12,12 @@ import { Buffer } from "buffer";
 export interface TunnelChunkBuffer extends Buffer {}
 
 export function encodeTunnelChunk(data: TunnelChunk): TunnelChunkBuffer {
-  const packetChunk: TunnelChunkBuffer = new Buffer(17 + data.chunk.byteLength);
+  const packetChunk: TunnelChunkBuffer = Buffer.alloc(
+    17 + data.chunk.byteLength
+  );
   const packetChunkDV = new DataView(packetChunk.buffer);
 
-  packetChunkDV.setUint8(data.direction === "inbound" ? 0 : 1, 0);
+  packetChunkDV.setUint8(0, data.direction === "inbound" ? 0 : 1);
   packetChunk.set(Buffer.from(data.connectionId.slice(0, 16), "hex"), 1);
   packetChunkDV.setUint32(9, data.chunkNumber); // chunk sequence number
   packetChunkDV.setUint32(13, data.time);

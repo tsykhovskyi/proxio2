@@ -14,10 +14,12 @@ import {
 } from "../../proxy/contracts/tunnel";
 import { randomBytes } from "crypto";
 import { config } from "../../config";
+import { logger } from "../../helper/logger";
 
 export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;
   statistic = new TunnelStatistic();
+  private log: (...args) => void;
 
   /**
    * For valid tunnelling `bindAddr` should be the same as requested by client.
@@ -29,10 +31,11 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
     protected sshConnection: Connection
   ) {
     super();
+    this.log = logger(`${hostname}:${port}`);
   }
 
   close(reason: string) {
-    console.log("Connection closed: ", reason);
+    this.log("Connection closed: ", reason);
     this.emit("close", reason);
   }
 
@@ -89,6 +92,10 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
         time: Date.now() - openedTime,
         chunk,
       });
+
+      this.log(
+        `${direction === "inbound" ? "<-" : "->"} ${chunk.byteLength} bytes`
+      );
 
       trafficBytes += chunk.length;
     };

@@ -8,13 +8,11 @@ export class TunnelStatistic implements Statistic {
   responses: number = 0;
 
   inboundChunk(chunk: Buffer) {
-    console.log(`chunk in type: ${chunk.byteLength}, size: ${chunk.length}`);
     this.inboundTraffic += chunk.length;
     this.traffic += chunk.length;
   }
 
   outboundChunk(chunk: Buffer) {
-    console.log(`chunk out type: ${chunk.byteLength}, size: ${chunk.length}`);
     this.outboundTraffic += chunk.length;
     this.traffic += chunk.length;
   }

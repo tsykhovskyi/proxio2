@@ -6,6 +6,9 @@ import { config } from "../config";
 import { Tunnel, TunnelRequest } from "../proxy/contracts/tunnel";
 import { ChannelFactory } from "./pty/channel-factory";
 import { createTunnel } from "./tunnel/tunnel-factory";
+import { logger } from "../helper/logger";
+
+const log = logger("SSH");
 
 export interface SshServerInterface {
   run(): void;
@@ -32,7 +35,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
 
   run() {
     this.server.on("connection", (connection) => {
-      console.log("Client connected!");
+      log("Client connected!");
       let username = "";
       let tunnel: SshTunnel | null = null;
       const ptyChannelFactory = new ChannelFactory();
@@ -66,7 +69,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
             });
 
           session.on("close", () => {
-            console.log("session closed");
+            log("session closed");
             return;
           });
         })
@@ -109,11 +112,11 @@ export class SshServer extends EventEmitter implements SshServerInterface {
     });
 
     this.server.listen(config.sshPort, () => {
-      console.log("Listening on port " + config.sshPort);
+      log("Listening on port " + config.sshPort);
     });
   }
 
   stop() {
-    this.server.close(() => console.log("SSH server is closed"));
+    this.server.close(() => log("SSH server is closed"));
   }
 }

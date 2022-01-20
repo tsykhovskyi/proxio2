@@ -7,12 +7,16 @@ import * as fs from "fs";
 import EventEmitter from "events";
 import { config } from "../config";
 import { Tunnel } from "./contracts/tunnel";
+import { logger } from "../helper/logger";
+
+const log = logger("Proxy SC");
 
 export declare interface ServersController {
   on(
     event: "http-connection",
     listener: (host: string, socket: Socket) => void
   );
+
   on(event: "tcp-connection", listener: (port: number, socket: Socket) => void);
 }
 
@@ -42,13 +46,13 @@ export class ServersController extends EventEmitter {
 
   stop() {
     for (const [port, server] of this.servers.entries()) {
-      server.close(() => console.log(`Port ${port}  is released`));
+      server.close(() => log(`Port ${port}  is released`));
     }
   }
 
   private async onHttpConnection(socket: Socket) {
     socket.on("error", (err) => {
-      console.log(err.stack);
+      log(err.stack);
     });
 
     const { remoteAddress, remotePort } = socket;
@@ -70,6 +74,9 @@ export class ServersController extends EventEmitter {
       forwarder.connect(config.monitorPrivatePort, "127.0.0.1", () => {
         socket.pipe(forwarder).pipe(socket);
       });
+      forwarder.on("close", (hadError) => {
+        log("cliend socket was closed");
+      });
       return;
     }
 
@@ -84,7 +91,7 @@ export class ServersController extends EventEmitter {
     const httpServer = createServer();
     httpServer.on("connection", this.onHttpConnection.bind(this));
     httpServer.listen(config.httpPort, () =>
-      console.log(`Proxy port ${config.httpPort} is listening...`)
+      log(`Proxy port ${config.httpPort} is listening...`)
     );
     this.servers.set(config.httpPort, httpServer);
 
@@ -96,7 +103,7 @@ export class ServersController extends EventEmitter {
       this.onHttpConnection.bind(this)
     );
     tlsServer.listen(config.httpsPort, () =>
-      console.log(`Proxy port ${config.httpsPort} is listening...`)
+      log(`Proxy port ${config.httpsPort} is listening...`)
     );
     this.servers.set(config.httpsPort, tlsServer);
   }
@@ -117,7 +124,7 @@ export class ServersController extends EventEmitter {
 
     this.servers.set(bindPort, tcpServer);
     tcpServer.listen(bindPort, () =>
-      console.log(`Proxy port ${bindPort} is listening...`)
+      log(`Proxy port ${bindPort} is listening...`)
     );
   }
 
@@ -126,7 +133,7 @@ export class ServersController extends EventEmitter {
     if (server === undefined) {
       return;
     }
-    server.close(() => console.log(`Proxy port ${bindPort} is released`));
+    server.close(() => log(`Proxy port ${bindPort} is released`));
     this.servers.delete(bindPort);
   }
 }

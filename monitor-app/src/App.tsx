@@ -6,7 +6,7 @@ function App() {
 
   return (
     <div className="App">
-      <Tunnel url={window.location} />
+      <Tunnel url={host} />
     </div>
   );
 }

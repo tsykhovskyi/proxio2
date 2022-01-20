@@ -1,4 +1,6 @@
 import { Socket } from "net";
+import { TunnelChunk, TunnelConnection } from "../../traffic";
+import { TunnelEventsSource } from "../../traffic/contracts";
 
 export interface Statistic {
   inboundTraffic: number;
@@ -16,25 +18,7 @@ export interface TunnelRequest {
   reject: () => void;
 }
 
-export type TunnelPacketState = "open" | "closed" | "error";
-
-export interface TunnelPacket {
-  id: string; // hexadecimal with length 16
-  timestamp: number; // in ms
-  state: TunnelPacketState;
-  chunksCnt: number;
-  trafficBytes: number;
-}
-
-export interface TunnelChunk {
-  connectionId: string; // hexadecimal with length 16
-  direction: "inbound" | "outbound";
-  chunkNumber: number;
-  time: number; // time lasts after connection was opened in ms
-  chunk: Buffer;
-}
-
-export interface Tunnel {
+export interface Tunnel extends TunnelEventsSource {
   /**
    * If tunnel HTTP or TCP
    */
@@ -54,9 +38,9 @@ export interface Tunnel {
 
   serve(socket: Socket);
 
-  on(event: "tunnel-packet", listener: (packet: TunnelPacket) => void);
+  on(event: "connection", listener: (packet: TunnelConnection) => void);
 
-  on(event: "tunnel-packet-data", listener: (chunk: TunnelChunk) => void);
+  on(event: "connection-chunk", listener: (chunk: TunnelChunk) => void);
 
   on(event: "close", listener: () => void);
 

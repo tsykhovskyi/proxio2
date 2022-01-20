@@ -76,7 +76,7 @@ export class Channel extends EventEmitter {
   }
 
   private addEventListeners() {
-    this.tunnel.on("tunnel-packet-data", (packet) => {
+    this.tunnel.on("connection-chunk", (packet) => {
       this.updateStatistics();
     });
   }

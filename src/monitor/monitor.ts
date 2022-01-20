@@ -3,8 +3,8 @@ import { Server } from "http";
 import { config } from "../config";
 import { WebSocket, WebSocketServer } from "ws";
 import { Tunnel } from "../proxy/contracts/tunnel";
-import { encodeTunnelChunk } from "./buffer";
 import { logger } from "../helper/logger";
+import { encodeTunnelChunk, encodeTunnelConnection } from "../traffic";
 
 const log = logger("MONITOR");
 
@@ -13,10 +13,12 @@ export class Monitor {
   private sockets = new Set<WebSocket>();
 
   onTunnelOpened(tunnel: Tunnel) {
-    tunnel.on("tunnel-packet", (packet) => {
-      this.sockets.forEach((socket) => socket.send(JSON.stringify(packet)));
+    tunnel.on("connection", (packet) => {
+      this.sockets.forEach((socket) =>
+        socket.send(encodeTunnelConnection(packet))
+      );
     });
-    tunnel.on("tunnel-packet-data", (chunk) => {
+    tunnel.on("connection-chunk", (chunk) => {
       this.sockets.forEach((socket) => {
         socket.send(encodeTunnelChunk(chunk));
       });

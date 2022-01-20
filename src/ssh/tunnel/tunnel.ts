@@ -6,15 +6,15 @@ import {
 } from "../../proxy/stream";
 import { Connection, ServerChannel } from "ssh2";
 import { TunnelStatistic } from "./tunnel-statistic";
-import {
-  Tunnel,
-  TunnelChunk,
-  TunnelPacket,
-  TunnelPacketState,
-} from "../../proxy/contracts/tunnel";
+import { Tunnel } from "../../proxy/contracts/tunnel";
 import { randomBytes } from "crypto";
 import { config } from "../../config";
 import { logger } from "../../helper/logger";
+import {
+  TunnelChunk,
+  TunnelConnection,
+  TunnelPacketState,
+} from "../../traffic";
 
 export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;
@@ -66,29 +66,31 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
    * - from Net socket to SSH channel (inbound traffic)
    * - from SSH channel to Net socket (outbound traffic)
    *
-   * Listens socket, channel events to emit `tunnel-packet`, `tunnel-packet-data` events.
+   * Listens socket, channel events to emit `connection`, `connection-chunk` events.
    */
   protected forwardSshChannel(socket: Socket, sshChannel: ServerChannel) {
     const connectionId = randomBytes(8).toString("hex");
-    let chunksCnt = 0;
+    let inboundChunksCnt = 0;
+    let outboundChunksCnt = 0;
     let trafficBytes = 0;
     let openedTime = Date.now();
 
     const onStateChange = (state: TunnelPacketState) => {
-      this.emit("tunnel-packet", <TunnelPacket>{
+      this.emit("connection", <TunnelConnection>{
         id: connectionId,
         timestamp: Date.now(),
         state,
-        chunksCnt,
+        chunksCnt: inboundChunksCnt + outboundChunksCnt,
         trafficBytes,
       });
     };
 
     const onChunk = (chunk: Buffer, direction: "inbound" | "outbound") => {
-      this.emit("tunnel-packet-data", <TunnelChunk>{
+      this.emit("connection-chunk", <TunnelChunk>{
         connectionId,
         direction,
-        chunkNumber: chunksCnt++,
+        chunkNumber:
+          direction === "inbound" ? inboundChunksCnt++ : outboundChunksCnt++,
         time: Date.now() - openedTime,
         chunk,
       });

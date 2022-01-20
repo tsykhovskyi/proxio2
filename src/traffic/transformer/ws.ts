@@ -1,5 +1,9 @@
-import { TunnelChunk } from "../proxy/contracts/tunnel";
 import { Buffer } from "buffer";
+import { TunnelChunk, TunnelConnection } from "../contracts";
+
+export function encodeTunnelConnection(conn: TunnelConnection) {
+  return JSON.stringify(conn);
+}
 
 /**
  * Offset    Length

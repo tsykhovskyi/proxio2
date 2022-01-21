@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import styles from "./Tunnel.module.scss";
-import { createHttpParserFromWs } from "../../services/http-parser-factory";
-import { StringDecoder } from "string_decoder";
+import { createHttpParserFromWs } from "../../common/traffic";
 
 export const Tunnel = (props: { url: string }) => {
   function newEvent(data: string, color?: string) {

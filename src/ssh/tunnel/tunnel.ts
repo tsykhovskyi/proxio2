@@ -6,15 +6,15 @@ import {
 } from "../../proxy/stream";
 import { Connection, ServerChannel } from "ssh2";
 import { TunnelStatistic } from "./tunnel-statistic";
-import { Tunnel } from "../../proxy/contracts/tunnel";
-import { randomBytes } from "crypto";
-import { config } from "../../config";
-import { logger } from "../../helper/logger";
 import {
+  Tunnel,
   TunnelChunk,
   TunnelConnection,
   TunnelPacketState,
-} from "../../../monitor-app/src/common/traffic";
+} from "../../proxy/contracts/tunnel";
+import { randomBytes } from "crypto";
+import { config } from "../../config";
+import { logger } from "../../helper/logger";
 
 export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;

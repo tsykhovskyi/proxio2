@@ -1,9 +1,4 @@
 import { Socket } from "net";
-import {
-  TunnelChunk,
-  TunnelConnection,
-} from "../../../monitor-app/src/common/traffic";
-import { TunnelEventsSource } from "../../../monitor-app/src/common/traffic/contracts";
 
 export interface Statistic {
   inboundTraffic: number;
@@ -48,4 +43,31 @@ export interface Tunnel extends TunnelEventsSource {
   on(event: "close", listener: () => void);
 
   on(event: "tcp-forward-error", listener: (err: Error) => void);
+}
+
+export type TunnelPacketState = "open" | "closed" | "error";
+
+export interface TunnelConnection {
+  id: string; // hexadecimal with length 16
+  timestamp: number; // in ms
+  state: TunnelPacketState;
+  chunksCnt: number;
+  trafficBytes: number;
+}
+
+export interface TunnelChunk {
+  connectionId: string; // hexadecimal with length 16
+  direction: "inbound" | "outbound";
+  chunkNumber: number;
+  time: number; // time lasts after connection was opened in ms
+  chunk: Uint8Array;
+}
+
+export interface TunnelEventsSource {
+  on(
+    event: "connection",
+    listener: (connection: TunnelConnection) => void
+  ): void;
+
+  on(event: "connection-chunk", listener: (chunk: TunnelChunk) => void): void;
 }

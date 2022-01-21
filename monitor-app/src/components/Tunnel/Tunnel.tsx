@@ -5,7 +5,7 @@ import { createHttpParserFromWs } from "../../common/traffic";
 export const Tunnel = (props: { url: string }) => {
   function newEvent(data: string, color?: string) {
     const el = document.createElement("div");
-    el.style.border = "1px solid black";
+    el.style.border = "2px solid black";
     el.style.padding = "5px";
     if (color !== undefined) {
       el.style.borderColor = color;
@@ -21,18 +21,26 @@ export const Tunnel = (props: { url: string }) => {
     const parser = createHttpParserFromWs(socket);
     parser.on("request", (request) => {
       request.on("data", (chunk) => {
-        newEvent(new TextDecoder().decode(chunk));
+        console.log("<- data");
+        newEvent(new TextDecoder().decode(chunk), "lightgreen");
+      });
+      request.on("close", () => {
+        console.log("<- finished");
       });
 
       request.on("response", (response) => {
         response.on("data", (chunk) => {
-          newEvent(new TextDecoder().decode(chunk));
+          console.log("-> data");
+          newEvent(new TextDecoder().decode(chunk), "indianred");
+        });
+        response.on("close", () => {
+          console.log("-> finished");
         });
 
-        newEvent(JSON.stringify(response));
+        newEvent(JSON.stringify(response), "red");
       });
 
-      newEvent(JSON.stringify(request));
+      newEvent(JSON.stringify(request), "green");
     });
   });
 

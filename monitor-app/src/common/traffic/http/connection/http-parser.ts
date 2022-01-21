@@ -1,6 +1,8 @@
-import { HttpRequest, Headers, HttpResponse } from "../interfaces";
 import { readHeadersBlock } from "./headers";
 import { EventEmitter } from "../../event-emitter";
+import { RequestImpl } from "./models/request";
+import { ResponseImpl } from "./models/response";
+import { HttpRequest } from "../tunnel-parser";
 
 class Payload {
   public readonly chunks = new Map<number, Uint8Array>();
@@ -16,58 +18,15 @@ class Payload {
   }
 }
 
-class HttpRequestImpl extends EventEmitter implements HttpRequest {
-  constructor(
-    public method: string,
-    public uri: string,
-    public protocol: string,
-    public headers: Headers
-  ) {
-    super();
-  }
-
-  data(chunk: Uint8Array) {
-    this.emit("data", chunk);
-  }
-
-  close() {
-    this.emit("close");
-  }
-
-  response(response: HttpResponse) {
-    this.emit("response", response);
-  }
-}
-
-class HttpResponseImpl extends EventEmitter implements HttpResponse {
-  constructor(
-    public protocol: string,
-    public statusCode: number,
-    public statusMessage: string,
-    public headers: Headers
-  ) {
-    super();
-  }
-
-  data(chunk: Uint8Array) {
-    console.log("response data");
-    this.emit("data", chunk);
-  }
-
-  close() {
-    this.emit("close");
-  }
-}
-
-export declare interface ConnectionParser {
+export declare interface HttpParser {
   on(event: "request", listener: (request: HttpRequest) => void): void;
 
   removeAllListeners(event: "request"): void;
 }
 
-export class ConnectionParser extends EventEmitter {
-  private request: HttpRequestImpl | null = null;
-  private response: HttpResponseImpl | null = null;
+export class HttpParser extends EventEmitter {
+  private request: RequestImpl | null = null;
+  private response: ResponseImpl | null = null;
 
   private inboundChunks = new Payload();
   private outboundChunks = new Payload();
@@ -92,7 +51,6 @@ export class ConnectionParser extends EventEmitter {
   private check() {
     let chunk;
     while (null !== (chunk = this.inboundChunks.next())) {
-      console.log("Read in chunk", chunk);
       if (this.inboundChunks.current === 0) {
         this.initRequest(chunk);
       } else {
@@ -101,11 +59,9 @@ export class ConnectionParser extends EventEmitter {
     }
 
     while (null !== (chunk = this.outboundChunks.next())) {
-      console.log("Read out chunk", chunk);
       if (this.outboundChunks.current === 0) {
         this.initResponse(chunk);
       } else {
-        console.log("response data");
         this.response?.data(chunk);
       }
     }
@@ -118,12 +74,7 @@ export class ConnectionParser extends EventEmitter {
     }
 
     const [method, uri, protocol] = headersBlock.startLine;
-    this.request = new HttpRequestImpl(
-      method,
-      uri,
-      protocol,
-      headersBlock.headers
-    );
+    this.request = new RequestImpl(method, uri, protocol, headersBlock.headers);
     this.emit("request", this.request);
 
     if (headersBlock.blockEnd < chunk.byteLength) {
@@ -137,10 +88,9 @@ export class ConnectionParser extends EventEmitter {
       return this.close();
     }
 
-    console.log("Response created", headersBlock);
     const [protocol, statusCode, statusMessage] = headersBlock.startLine;
 
-    this.response = new HttpResponseImpl(
+    this.response = new ResponseImpl(
       protocol,
       parseInt(statusCode),
       statusMessage,
@@ -148,7 +98,6 @@ export class ConnectionParser extends EventEmitter {
     );
     this.request?.response(this.response);
     if (headersBlock.blockEnd < chunk.byteLength) {
-      console.log("response data");
       this.response.data(chunk.subarray(headersBlock.blockEnd));
     }
   }

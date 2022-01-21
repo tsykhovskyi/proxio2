@@ -1,6 +1,9 @@
+import { HeadersImpl } from "./models/headers";
+import { HttpHeaders } from "../tunnel-parser";
+
 type HeadersBlock = {
   startLine: [string, string, string];
-  headers: Record<string, string>;
+  headers: HttpHeaders;
   blockEnd: number;
 };
 
@@ -11,29 +14,34 @@ export function readHeadersBlock(chunk: Uint8Array): HeadersBlock | null {
   const rl = new ReadLine(chunk);
 
   let startLine: [string, string, string] | null = null;
-  let headers: Record<string, string> = {};
+  const headers = new HeadersImpl();
 
-  for (const {line, end} of rl) {
+  for (const { line, end } of rl) {
     if (startLine === null) {
       const parts = line.split(" ");
-      if (parts.length !== 3) {
+      if (parts.length < 3) {
         return null;
       }
 
-      startLine = parts as [string, string, string];
-    } else {
-      if (line === "") {
-        //  empty line means end of headers block
-        return { startLine, headers, blockEnd: end };
-      }
-
-      const delimPos = line.indexOf(":");
-      if (delimPos === -1) {
-        return null;
-      }
-
-      headers[line.slice(0, delimPos).trim()] = line.slice(delimPos + 1).trim();
+      startLine = [parts[0], parts[1], parts.slice(2).join(" ")] as [
+        string,
+        string,
+        string
+      ];
+      continue;
     }
+
+    if (line === "") {
+      //  empty line means end of headers block
+      return { startLine, headers, blockEnd: end };
+    }
+
+    const delimPos = line.indexOf(":");
+    if (delimPos === -1) {
+      return null;
+    }
+
+    headers.add(line.slice(0, delimPos), line.slice(delimPos + 1));
   }
 
   return null;

@@ -1,4 +1,4 @@
-import { HttpParser } from "./http/http-parser";
+import { TunnelParser } from "./http/tunnel-parser";
 import { TunnelEventsSource } from "./contracts";
 import { EventEmitter } from "./event-emitter";
 import {
@@ -7,7 +7,7 @@ import {
   TunnelChunkBuffer,
 } from "./transformer/ws";
 
-export function createHttpParserFromWs(ws: WebSocket) {
+export function createHttpParserFromWs(ws: WebSocket): TunnelParser {
   const source: TunnelEventsSource & EventEmitter = new EventEmitter();
 
   ws.addEventListener("open", (ev) => {});
@@ -31,5 +31,5 @@ export function createHttpParserFromWs(ws: WebSocket) {
     }
   });
 
-  return new HttpParser(source);
+  return new TunnelParser(source);
 }

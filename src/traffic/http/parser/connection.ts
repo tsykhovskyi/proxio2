@@ -61,6 +61,8 @@ class HttpResponseImpl extends EventEmitter implements HttpResponse {
 
 export declare interface ConnectionParser {
   on(event: "request", listener: (request: HttpRequest) => void);
+
+  removeAllListeners(event: "request");
 }
 
 export class ConnectionParser extends EventEmitter {

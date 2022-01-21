@@ -3,20 +3,44 @@ import {
   TunnelConnection,
   TunnelEventsSource,
 } from "../contracts";
+import { ConnectionParser } from "./parser/connection";
+import { HttpRequest } from "./interfaces";
+import EventEmitter from "events";
 
-export class HttpMapper {
+export declare interface HttpMapper {
+  on(event: "request", listener: (request: HttpRequest) => void);
+}
+
+export class HttpMapper extends EventEmitter {
+  private connectionParsers = new Map<string, ConnectionParser>();
+
   constructor(private source: TunnelEventsSource) {
+    super();
     this.subscribe();
   }
 
-  onConnection(connection: TunnelConnection) {
-    // register new connection
+  private onConnection(connection: TunnelConnection) {
+    if (connection.state === "open") {
+      const parser = new ConnectionParser();
+      parser.on("request", (request) => this.onParserRequest(request));
+      this.connectionParsers.set(connection.id, parser);
+    } else {
+      this.connectionParsers.get(connection.id)?.removeAllListeners("request");
+      this.connectionParsers.delete(connection.id);
+    }
   }
 
-  onConnectionChunk(chunk: TunnelChunk) {
-    // check direction
-    // handle request state
-    // handle response state
+  private onConnectionChunk(chunk: TunnelChunk) {
+    const parser = this.connectionParsers.get(chunk.connectionId);
+    if (parser === undefined) {
+      return;
+    }
+
+    parser.chunk(chunk.direction, chunk.chunk, chunk.chunkNumber);
+  }
+
+  private onParserRequest(request: HttpRequest) {
+    this.emit("request", request);
   }
 
   private subscribe() {

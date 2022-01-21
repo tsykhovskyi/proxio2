@@ -7,13 +7,13 @@ type HeadersBlock = {
 /**
  * Parse headers block or return null if payload invalid
  */
-export function readHeadersBlock(chunk: Buffer): HeadersBlock | null {
+export function readHeadersBlock(chunk: Uint8Array): HeadersBlock | null {
   const rl = new ReadLine(chunk);
 
   let startLine: [string, string, string] | null = null;
   let headers: Record<string, string> = {};
 
-  for (const { line, end } of rl) {
+  for (const {line, end} of rl) {
     if (startLine === null) {
       const parts = line.split(" ");
       if (parts.length !== 3) {
@@ -27,12 +27,12 @@ export function readHeadersBlock(chunk: Buffer): HeadersBlock | null {
         return { startLine, headers, blockEnd: end };
       }
 
-      const parts = line.split(":");
-      if (parts.length !== 2) {
+      const delimPos = line.indexOf(":");
+      if (delimPos === -1) {
         return null;
       }
 
-      headers[parts[0].trim()] = parts[1].trim();
+      headers[line.slice(0, delimPos).trim()] = line.slice(delimPos + 1).trim();
     }
   }
 
@@ -42,15 +42,15 @@ export function readHeadersBlock(chunk: Buffer): HeadersBlock | null {
 class ReadLine implements Iterable<{ line: string; end: number }> {
   private utf8Decoder: TextDecoder;
 
-  constructor(private buffer: Buffer) {
+  constructor(private buffer: Uint8Array) {
     this.utf8Decoder = new TextDecoder();
   }
 
   *[Symbol.iterator]() {
     let offset = 0;
 
-    while (offset < this.buffer.length) {
-      let newlinePos = this.buffer.indexOf(0x0a); // \n
+    while (offset < this.buffer.byteLength) {
+      let newlinePos = this.buffer.indexOf(0x0a, offset); // \n
       if (newlinePos === -1) {
         const line = this.utf8Decoder.decode(this.buffer.subarray(offset));
         yield { line, end: newlinePos + 1 };
@@ -59,7 +59,7 @@ class ReadLine implements Iterable<{ line: string; end: number }> {
 
       const line = this.utf8Decoder.decode(
         this.buffer.subarray(
-          0,
+          offset,
           newlinePos - (this.buffer[newlinePos - 1] === 0x0d ? 1 : 0) // -1 if \r before \n
         )
       );

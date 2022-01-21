@@ -13,11 +13,14 @@ export interface TunnelChunk {
   direction: "inbound" | "outbound";
   chunkNumber: number;
   time: number; // time lasts after connection was opened in ms
-  chunk: Buffer;
+  chunk: Uint8Array;
 }
 
 export interface TunnelEventsSource {
-  on(event: "connection", listener: (connection: TunnelConnection) => void);
+  on(
+    event: "connection",
+    listener: (connection: TunnelConnection) => void
+  ): void;
 
-  on(event: "connection-chunk", listener: (chunk: TunnelChunk) => void);
+  on(event: "connection-chunk", listener: (chunk: TunnelChunk) => void): void;
 }

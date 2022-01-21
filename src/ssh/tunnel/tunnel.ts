@@ -14,7 +14,7 @@ import {
   TunnelChunk,
   TunnelConnection,
   TunnelPacketState,
-} from "../../traffic";
+} from "../../../monitor-app/src/common/traffic";
 
 export abstract class SshTunnel extends EventEmitter implements Tunnel {
   readonly http;

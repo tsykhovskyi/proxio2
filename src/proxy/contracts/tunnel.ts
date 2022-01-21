@@ -1,6 +1,9 @@
 import { Socket } from "net";
-import { TunnelChunk, TunnelConnection } from "../../traffic";
-import { TunnelEventsSource } from "../../traffic/contracts";
+import {
+  TunnelChunk,
+  TunnelConnection,
+} from "../../../monitor-app/src/common/traffic";
+import { TunnelEventsSource } from "../../../monitor-app/src/common/traffic/contracts";
 
 export interface Statistic {
   inboundTraffic: number;

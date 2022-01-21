@@ -1,13 +1,12 @@
 import { HttpRequest, Headers, HttpResponse } from "../interfaces";
-import { TunnelConnection } from "../../contracts";
 import { readHeadersBlock } from "./headers";
-import EventEmitter from "events";
+import { EventEmitter } from "../../event-emitter";
 
 class Payload {
-  public readonly chunks = new Map<number, Buffer>();
+  public readonly chunks = new Map<number, Uint8Array>();
   public current = -1;
 
-  next(): Buffer | null {
+  next(): Uint8Array | null {
     const currChunk = this.chunks.get(this.current + 1);
     if (currChunk) {
       this.current++;
@@ -27,7 +26,7 @@ class HttpRequestImpl extends EventEmitter implements HttpRequest {
     super();
   }
 
-  data(chunk: Buffer) {
+  data(chunk: Uint8Array) {
     this.emit("data", chunk);
   }
 
@@ -50,7 +49,8 @@ class HttpResponseImpl extends EventEmitter implements HttpResponse {
     super();
   }
 
-  data(chunk: Buffer) {
+  data(chunk: Uint8Array) {
+    console.log("response data");
     this.emit("data", chunk);
   }
 
@@ -60,9 +60,9 @@ class HttpResponseImpl extends EventEmitter implements HttpResponse {
 }
 
 export declare interface ConnectionParser {
-  on(event: "request", listener: (request: HttpRequest) => void);
+  on(event: "request", listener: (request: HttpRequest) => void): void;
 
-  removeAllListeners(event: "request");
+  removeAllListeners(event: "request"): void;
 }
 
 export class ConnectionParser extends EventEmitter {
@@ -74,9 +74,11 @@ export class ConnectionParser extends EventEmitter {
 
   private closed: boolean = false;
 
-  connectionUpdate(upd: TunnelConnection) {}
-
-  chunk(direction: "inbound" | "outbound", chunk: Buffer, chunkNum: number) {
+  chunk(
+    direction: "inbound" | "outbound",
+    chunk: Uint8Array,
+    chunkNum: number
+  ) {
     if (this.closed) {
       return;
     }
@@ -90,6 +92,7 @@ export class ConnectionParser extends EventEmitter {
   private check() {
     let chunk;
     while (null !== (chunk = this.inboundChunks.next())) {
+      console.log("Read in chunk", chunk);
       if (this.inboundChunks.current === 0) {
         this.initRequest(chunk);
       } else {
@@ -98,15 +101,17 @@ export class ConnectionParser extends EventEmitter {
     }
 
     while (null !== (chunk = this.outboundChunks.next())) {
+      console.log("Read out chunk", chunk);
       if (this.outboundChunks.current === 0) {
         this.initResponse(chunk);
       } else {
+        console.log("response data");
         this.response?.data(chunk);
       }
     }
   }
 
-  private initRequest(chunk: Buffer) {
+  private initRequest(chunk: Uint8Array) {
     const headersBlock = readHeadersBlock(chunk);
     if (headersBlock === null) {
       return this.close();
@@ -121,17 +126,18 @@ export class ConnectionParser extends EventEmitter {
     );
     this.emit("request", this.request);
 
-    if (headersBlock.blockEnd < chunk.length) {
+    if (headersBlock.blockEnd < chunk.byteLength) {
       this.request.data(chunk.subarray(headersBlock.blockEnd));
     }
   }
 
-  private initResponse(chunk: Buffer) {
+  private initResponse(chunk: Uint8Array) {
     const headersBlock = readHeadersBlock(chunk);
     if (headersBlock === null) {
       return this.close();
     }
 
+    console.log("Response created", headersBlock);
     const [protocol, statusCode, statusMessage] = headersBlock.startLine;
 
     this.response = new HttpResponseImpl(
@@ -141,7 +147,8 @@ export class ConnectionParser extends EventEmitter {
       headersBlock.headers
     );
     this.request?.response(this.response);
-    if (headersBlock.blockEnd < chunk.length) {
+    if (headersBlock.blockEnd < chunk.byteLength) {
+      console.log("response data");
       this.response.data(chunk.subarray(headersBlock.blockEnd));
     }
   }

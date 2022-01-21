@@ -4,7 +4,10 @@ import { config } from "../config";
 import { WebSocket, WebSocketServer } from "ws";
 import { Tunnel } from "../proxy/contracts/tunnel";
 import { logger } from "../helper/logger";
-import { encodeTunnelChunk, encodeTunnelConnection } from "../traffic";
+import {
+  encodeTunnelChunk,
+  encodeTunnelConnection,
+} from "../../monitor-app/src/common/traffic";
 
 const log = logger("MONITOR");
 

@@ -1,8 +1,24 @@
-import { Buffer } from "buffer";
 import { TunnelChunk, TunnelConnection } from "../contracts";
 
 export function encodeTunnelConnection(conn: TunnelConnection) {
   return JSON.stringify(conn);
+}
+
+export function decodeTunnelConnection(
+  payload: string
+): TunnelConnection | null {
+  const conn = JSON.parse(payload);
+  if (
+    typeof conn["id"] === "string" &&
+    typeof conn["timestamp"] === "number" &&
+    typeof conn["state"] === "string" &&
+    typeof conn["chunksCnt"] === "number" &&
+    typeof conn["trafficBytes"] === "number"
+  ) {
+    return conn;
+  }
+
+  return null;
 }
 
 /**
@@ -13,7 +29,7 @@ export function encodeTunnelConnection(conn: TunnelConnection) {
  * 13        4 bytes   - time in ms after connection was opened
  * 17        ...       - chunk payload
  */
-export interface TunnelChunkBuffer extends Buffer {}
+export interface TunnelChunkBuffer extends Uint8Array {}
 
 export function encodeTunnelChunk(data: TunnelChunk): TunnelChunkBuffer {
   const packetChunk: TunnelChunkBuffer = Buffer.alloc(
@@ -30,15 +46,23 @@ export function encodeTunnelChunk(data: TunnelChunk): TunnelChunkBuffer {
   return packetChunk;
 }
 
-export function decodeTunnelChunk(payload: TunnelChunkBuffer): TunnelChunk {
+export function decodeTunnelChunk(
+  payload: TunnelChunkBuffer
+): TunnelChunk | null {
   const dv = new DataView(payload);
-  const buffer = new Buffer(payload);
+  const buffer = new Uint8Array(payload);
 
-  const direction = dv.getUint8(0) === 0 ? "inbound" : "outbound";
-  const connectionId = buffer.slice(1, 9).toString("hex");
+  const directionByte = dv.getUint8(0);
+  if (directionByte !== 0 && directionByte !== 1) {
+    return null;
+  }
+  const direction = directionByte === 0 ? "inbound" : "outbound";
+  const connectionId = [...buffer.slice(1, 9)]
+    .map((v) => v.toString(16).padEnd(2, "0"))
+    .join("");
   const chunkNumber = dv.getUint32(9);
   const time = dv.getUint32(3);
-  const chunk = buffer.slice(17).buffer;
+  const chunk = buffer.slice(17);
 
   return <TunnelChunk>{
     connectionId,

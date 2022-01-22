@@ -17,7 +17,6 @@ export interface HttpResponse {
   bodyLength: number;
 
   on(event: "data", listener: (chunk: Uint8Array) => void): void;
-
   on(event: "close", listener: () => void): void;
 }
 
@@ -30,9 +29,7 @@ export interface HttpRequest {
   bodyLength: number;
 
   on(event: "data", listener: (chunk: Uint8Array) => void): void;
-
   on(event: "close", listener: () => void): void;
-
   on(event: "response", listener: (response: HttpResponse) => void): void;
 }
 
@@ -52,9 +49,9 @@ export class TunnelParser extends EventEmitter {
     let httpParser = this.httpParsers.get(chunk.connectionId);
     if (httpParser === undefined) {
       httpParser = new HttpParser();
-      console.log("parser init");
+      this.httpParsers.set(chunk.connectionId, httpParser);
+
       httpParser.on("request", (request) => {
-        // todo check connection close event from server
         request.on("response", (response) =>
           response.on("close", () =>
             this.httpParsers.delete(chunk.connectionId)
@@ -62,7 +59,6 @@ export class TunnelParser extends EventEmitter {
         );
         this.emit("request", request);
       });
-      this.httpParsers.set(chunk.connectionId, httpParser);
     }
 
     httpParser.chunk(chunk.direction, chunk.chunk, chunk.chunkNumber);

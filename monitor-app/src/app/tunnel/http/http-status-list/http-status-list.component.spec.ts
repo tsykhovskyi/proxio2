@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { HttpInfoListComponent } from './http-info-list.component';
+import { HttpStatusListComponent } from './http-status-list.component';
 
 describe('HttpStatusComponent', () => {
-  let component: HttpInfoListComponent;
-  let fixture: ComponentFixture<HttpInfoListComponent>;
+  let component: HttpStatusListComponent;
+  let fixture: ComponentFixture<HttpStatusListComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [HttpInfoListComponent],
+      declarations: [HttpStatusListComponent],
     }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(HttpInfoListComponent);
+    fixture = TestBed.createComponent(HttpStatusListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -1,15 +1,15 @@
-import { TunnelChunk, TunnelConnection } from "../contracts";
+import { TunnelChunk, TunnelConnection } from '../contracts';
 
 export function decodeTunnelConnection(
   payload: string
 ): TunnelConnection | null {
   const conn = JSON.parse(payload);
   if (
-    typeof conn["id"] === "string" &&
-    typeof conn["timestamp"] === "number" &&
-    typeof conn["state"] === "string" &&
-    typeof conn["chunksCnt"] === "number" &&
-    typeof conn["trafficBytes"] === "number"
+    typeof conn['id'] === 'string' &&
+    typeof conn['timestamp'] === 'number' &&
+    typeof conn['state'] === 'string' &&
+    typeof conn['chunksCnt'] === 'number' &&
+    typeof conn['trafficBytes'] === 'number'
   ) {
     return conn;
   }
@@ -37,10 +37,10 @@ export function decodeTunnelChunk(
   if (directionByte !== 0 && directionByte !== 1) {
     return null;
   }
-  const direction = directionByte === 0 ? "inbound" : "outbound";
+  const direction = directionByte === 0 ? 'inbound' : 'outbound';
   const connectionId = [...buffer.slice(1, 9)]
-    .map((v) => v.toString(16).padEnd(2, "0"))
-    .join("");
+    .map((v) => v.toString(16).padStart(2, '0'))
+    .join('');
   const chunkNumber = dv.getUint32(9);
   const time = dv.getUint32(3);
   const chunk = buffer.slice(17);

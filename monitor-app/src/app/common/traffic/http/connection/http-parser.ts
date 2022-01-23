@@ -1,27 +1,27 @@
-import { readHeadersBlock } from "./headers";
-import { EventEmitter } from "../../event-emitter";
-import { RequestImpl } from "./models/request";
-import { ResponseImpl } from "./models/response";
-import { HttpRequest } from "../tunnel-parser";
+import { readHeadersBlock } from './headers';
+import { EventEmitter } from '../../event-emitter';
+import { RequestImpl } from './models/request';
+import { ResponseImpl } from './models/response';
+import { HttpRequest } from '../tunnel-parser';
 
 class Payload {
   public readonly chunks = new Map<number, Uint8Array>();
   public current = -1;
 
   next(): Uint8Array | null {
-    const currChunk = this.chunks.get(this.current + 1);
-    if (currChunk) {
+    const nextChunk = this.chunks.get(this.current + 1);
+    if (nextChunk) {
       this.current++;
-      return currChunk;
+      return nextChunk;
     }
     return null;
   }
 }
 
 export declare interface HttpParser {
-  on(event: "request", listener: (request: HttpRequest) => void): void;
+  on(event: 'request', listener: (request: HttpRequest) => void): void;
 
-  removeAllListeners(event: "request"): void;
+  removeAllListeners(event: 'request'): void;
 }
 
 export class HttpParser extends EventEmitter {
@@ -32,9 +32,10 @@ export class HttpParser extends EventEmitter {
   private outboundChunks = new Payload();
 
   private closed: boolean = false;
+  private totalHttpChunksCnt: null | number = null;
 
   chunk(
-    direction: "inbound" | "outbound",
+    direction: 'inbound' | 'outbound',
     chunk: Uint8Array,
     chunkNum: number
   ) {
@@ -42,14 +43,23 @@ export class HttpParser extends EventEmitter {
       return;
     }
     const payload =
-      direction === "inbound" ? this.inboundChunks : this.outboundChunks;
+      direction === 'inbound' ? this.inboundChunks : this.outboundChunks;
 
     payload.chunks.set(chunkNum, chunk);
     this.check();
   }
 
+  connectionClosed(chunksCnt: number) {
+    if (this.closed) {
+      return;
+    }
+    this.totalHttpChunksCnt = chunksCnt;
+    this.check();
+  }
+
   private check() {
     let chunk;
+    // Read request chunks
     while (null !== (chunk = this.inboundChunks.next())) {
       if (this.inboundChunks.current === 0) {
         this.initRequest(chunk);
@@ -58,12 +68,23 @@ export class HttpParser extends EventEmitter {
       }
     }
 
+    // Read response chunks
     while (null !== (chunk = this.outboundChunks.next())) {
       if (this.outboundChunks.current === 0) {
         this.initResponse(chunk);
       } else {
         this.response?.data(chunk);
       }
+    }
+
+    // Check if messages can be closed
+    if (
+      this.totalHttpChunksCnt !== null &&
+      this.totalHttpChunksCnt ===
+        this.inboundChunks.current + 1 + (this.outboundChunks.current + 1)
+    ) {
+      this.request?.close();
+      this.response?.close();
     }
   }
 
@@ -75,7 +96,7 @@ export class HttpParser extends EventEmitter {
 
     const [method, uri, protocol] = headersBlock.startLine;
     this.request = new RequestImpl(method, uri, protocol, headersBlock.headers);
-    this.emit("request", this.request);
+    this.emit('request', this.request);
 
     if (headersBlock.blockEnd < chunk.byteLength) {
       this.request.data(chunk.subarray(headersBlock.blockEnd));

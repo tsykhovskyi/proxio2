@@ -12,10 +12,7 @@ export interface HttpHeaders {
   find(name: string): string | null;
 }
 
-export interface HttpResponse {
-  protocol: string;
-  statusCode: number;
-  statusMessage: string;
+export interface HttpMessage {
   headers: HttpHeaders;
 
   bodyLength: number;
@@ -25,19 +22,22 @@ export interface HttpResponse {
   on(event: 'close', listener: () => void): void;
 }
 
-export interface HttpRequest {
+export interface HttpResponse extends HttpMessage {
+  protocol: string;
+  statusCode: number;
+  statusMessage: string;
+}
+
+export interface HttpRequest extends HttpMessage {
   method: string;
   uri: string;
   protocol: string;
-  headers: HttpHeaders;
 
-  bodyLength: number;
+  on(event: 'response', listener: (response: HttpResponse) => void): void;
 
   on(event: 'data', listener: (chunk: Uint8Array) => void): void;
 
   on(event: 'close', listener: () => void): void;
-
-  on(event: 'response', listener: (response: HttpResponse) => void): void;
 }
 
 export declare interface TunnelParser {

@@ -6,17 +6,13 @@ import { HttpPacketModel } from '../http-packet.model';
   template: `
     <div *ngIf="packet">
       <h3>Request</h3>
-      <div>{{ packet.request.headers | json }}</div>
-      <div *ngIf="packet.request.body">
-        {{ packet.request.body }}
-      </div>
+      <http-preview-message [message]="packet.request"></http-preview-message>
 
       <ng-container *ngIf="packet.response">
         <h3>Response</h3>
-        <div *ngIf="packet.response">{{ packet.response.headers | json }}</div>
-        <div *ngIf="packet.response.body">
-          {{ packet.response.body }}
-        </div>
+        <http-preview-message
+          [message]="packet.response"
+        ></http-preview-message>
       </ng-container>
     </div>
   `,

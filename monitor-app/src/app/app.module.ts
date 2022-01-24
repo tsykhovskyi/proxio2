@@ -11,6 +11,7 @@ import { HeadersComponent } from './tunnel/http/preview/message/headers/headers.
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { BodyComponent } from './tunnel/http/preview/message/body/body.component';
 import { ImageComponent } from './tunnel/http/preview/message/body/image/image.component';
+import { RawComponent } from './tunnel/http/preview/message/body/raw/raw.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { ImageComponent } from './tunnel/http/preview/message/body/image/image.c
     HeadersComponent,
     BodyComponent,
     ImageComponent,
+    RawComponent,
   ],
   imports: [BrowserModule, NgbModule],
   providers: [],

@@ -6,7 +6,7 @@ export abstract class Message extends EventEmitter {
   private expectedBodyLength: number | null = null;
   private closed: boolean = false;
 
-  constructor(public headers: HttpHeaders) {
+  constructor(public rawHeaders: string, public headers: HttpHeaders) {
     super();
 
     let bodyLengthHeader = this.headers.find('Content-Length');

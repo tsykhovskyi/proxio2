@@ -95,7 +95,13 @@ export class HttpParser extends EventEmitter {
     }
 
     const [method, uri, protocol] = headersBlock.startLine;
-    this.request = new RequestImpl(method, uri, protocol, headersBlock.headers);
+    this.request = new RequestImpl(
+      method,
+      uri,
+      protocol,
+      new TextDecoder().decode(chunk.subarray(0, headersBlock.blockEnd)),
+      headersBlock.headers
+    );
     this.emit('request', this.request);
 
     if (headersBlock.blockEnd < chunk.byteLength) {
@@ -115,6 +121,7 @@ export class HttpParser extends EventEmitter {
       protocol,
       parseInt(statusCode),
       statusMessage,
+      new TextDecoder().decode(chunk.subarray(0, headersBlock.blockEnd)),
       headersBlock.headers
     );
     this.request?.response(this.response);

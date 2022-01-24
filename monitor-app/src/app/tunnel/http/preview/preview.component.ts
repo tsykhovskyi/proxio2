@@ -6,7 +6,7 @@ import { HttpPacketModel } from '../http-packet.model';
   template: `
     <div *ngIf="packet">
       <h3>Request</h3>
-      <http-preview-message [message]="packet.request"></http-preview-message>
+      <!--      <http-preview-message [message]="packet.request"></http-preview-message>-->
 
       <ng-container *ngIf="packet.response">
         <h3>Response</h3>

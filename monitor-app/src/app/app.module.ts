@@ -8,6 +8,9 @@ import { MessageComponent } from './tunnel/http/preview/message/message.componen
 import { JsonComponent } from './tunnel/http/preview/message/body/json/json.component';
 import { HttpPreviewComponent } from './tunnel/http/preview/preview.component';
 import { HeadersComponent } from './tunnel/http/preview/message/headers/headers.component';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { BodyComponent } from './tunnel/http/preview/message/body/body.component';
+import { ImageComponent } from './tunnel/http/preview/message/body/image/image.component';
 
 @NgModule({
   declarations: [
@@ -18,8 +21,10 @@ import { HeadersComponent } from './tunnel/http/preview/message/headers/headers.
     MessageComponent,
     JsonComponent,
     HeadersComponent,
+    BodyComponent,
+    ImageComponent,
   ],
-  imports: [BrowserModule],
+  imports: [BrowserModule, NgbModule],
   providers: [],
   bootstrap: [AppComponent],
 })

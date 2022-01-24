@@ -13,6 +13,7 @@ export interface HttpHeaders {
 }
 
 export interface HttpMessage {
+  rawHeaders: string;
   headers: HttpHeaders;
 
   bodyLength: number;

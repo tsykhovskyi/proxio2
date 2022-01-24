@@ -15,17 +15,20 @@ import JSONFormatter from 'json-formatter-js';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JsonComponent implements OnChanges, AfterViewInit {
-  @Input() content!: string;
+  @Input() content!: Uint8Array;
 
   @ViewChild('jsonView')
   protected jsonView?: ElementRef<HTMLDivElement>;
 
   private jsonNode: HTMLDivElement | null = null;
+  private textDecoder: TextDecoder;
 
-  constructor() {}
+  constructor() {
+    this.textDecoder = new TextDecoder();
+  }
 
   ngOnChanges() {
-    this.jsonNode = this.createJsonNode(this.content);
+    this.jsonNode = this.createJsonNode(this.textDecoder.decode(this.content));
     this.render();
   }
 

@@ -6,8 +6,9 @@ export class ResponseImpl extends Message implements HttpResponse {
     public protocol: string,
     public statusCode: number,
     public statusMessage: string,
+    public override rawHeaders: string,
     public override headers: HttpHeaders
   ) {
-    super(headers);
+    super(rawHeaders, headers);
   }
 }

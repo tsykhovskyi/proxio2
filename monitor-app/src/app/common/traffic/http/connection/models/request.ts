@@ -6,9 +6,10 @@ export class RequestImpl extends Message implements HttpRequest {
     public method: string,
     public uri: string,
     public protocol: string,
+    public override rawHeaders: string,
     public override headers: HttpHeaders
   ) {
-    super(headers);
+    super(rawHeaders, headers);
   }
 
   response(response: HttpResponse) {

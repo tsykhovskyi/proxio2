@@ -1,94 +1,50 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Input,
-  OnInit,
+  OnChanges,
+  ViewChild,
 } from '@angular/core';
-import { JsonIterator, JsonRow } from './json-renderer.utility';
+import JSONFormatter from 'json-formatter-js';
 
 @Component({
   selector: 'http-preview-message-body-json',
-  template: `
-    <table class="table is-hoverable">
-      <tbody>
-        <tr
-          *ngFor="
-            let row of jsonRows
-              | jsonFilter: filterQuery
-              | expandedNodes: collapsedPaths
-          "
-          [attr.data-path]="row.path"
-        >
-          <td
-            [style.padding-left.px]="row.depth * 20"
-            [class.expandable]="row.value === undefined"
-            (click)="toogleExpanded(row.path)"
-          >
-            <span class="icon" *ngIf="row.value === undefined">
-              <i
-                class="fas"
-                [ngClass]="{
-                  'fa-minus': row.expanded,
-                  'fa-plus': !row.expanded
-                }"
-              ></i>
-            </span>
-            <span
-              [class.is-propKey]="row.value !== undefined"
-              class="color--key"
-              >{{ row.key }}:</span
-            >
-          </td>
-          <td>
-            <span [ngClass]="'color--' + typeOf(row.value)">
-              {{
-                typeOf(row.value) === 'string'
-                  ? '"' + row.value + '"'
-                  : row.value
-              }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  `,
-  styles: [],
+  template: ` <div #jsonView></div> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JsonComponent {
-  jsonRows!: JsonRow[];
+export class JsonComponent implements OnChanges, AfterViewInit {
+  @Input() content!: string;
 
-  filterQuery: string = '';
-  collapsedPaths = new Set<string>();
+  @ViewChild('jsonView')
+  protected jsonView?: ElementRef<HTMLDivElement>;
 
-  @Input()
-  set content(content: string) {
-    this.jsonRows = [...new JsonIterator(JSON.parse(content))];
+  private jsonNode: HTMLDivElement | null = null;
+
+  constructor() {}
+
+  ngOnChanges() {
+    this.jsonNode = this.createJsonNode(this.content);
+    this.render();
   }
 
-  toogleExpanded(path: string) {
-    const childrenPath = path + '/';
+  ngAfterViewInit(): void {
+    this.render();
+  }
 
-    if (this.collapsedPaths.has(childrenPath)) {
-      this.collapsedPaths.delete(childrenPath);
-    } else {
-      this.collapsedPaths.add(childrenPath);
+  private createJsonNode(content: string) {
+    const formatter = new JSONFormatter(JSON.parse(content), Infinity);
+    return formatter.render();
+  }
+
+  private render() {
+    const existedJsonNode = this.jsonView?.nativeElement.firstChild;
+    if (this.jsonNode) {
+      if (existedJsonNode && existedJsonNode !== this.jsonNode) {
+        this.jsonView?.nativeElement.removeChild(existedJsonNode);
+      }
+      this.jsonView?.nativeElement.appendChild(this.jsonNode);
     }
-  }
-
-  expandAll() {
-    this.collapsedPaths = new Set<string>();
-  }
-
-  collapseAll() {
-    this.collapsedPaths = new Set<string>(
-      this.jsonRows
-        .filter((row) => row.value === undefined)
-        .map((row) => row.path + '/')
-    );
-  }
-
-  typeOf(v: any): string {
-    return typeof v;
   }
 }

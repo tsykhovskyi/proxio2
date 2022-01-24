@@ -7,8 +7,6 @@ import { HttpStatusListComponent } from './tunnel/http/http-status-list/http-sta
 import { MessageComponent } from './tunnel/http/preview/message/message.component';
 import { JsonComponent } from './tunnel/http/preview/message/body/json/json.component';
 import { HttpPreviewComponent } from './tunnel/http/preview/preview.component';
-import { ExpandedNodesPipe } from './tunnel/http/preview/message/body/json/pipes/expanded-nodes.pipe';
-import { JsonFilterPipe } from './tunnel/http/preview/message/body/json/pipes/filter.pipe';
 import { HeadersComponent } from './tunnel/http/preview/message/headers/headers.component';
 
 @NgModule({
@@ -19,8 +17,6 @@ import { HeadersComponent } from './tunnel/http/preview/message/headers/headers.
     HttpPreviewComponent,
     MessageComponent,
     JsonComponent,
-    ExpandedNodesPipe,
-    JsonFilterPipe,
     HeadersComponent,
   ],
   imports: [BrowserModule],

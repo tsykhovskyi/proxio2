@@ -16,7 +16,6 @@ import { BodyTypeDefiner, ContentType } from './service/body-type-definer';
         [headers]="message.headers"
       ></http-preview-message-headers>
       <div *ngIf="message.body">
-        {{ message.body }}
         <div [ngSwitch]="contentType">
           <!--          <app-html-->
           <!--            *ngSwitchCase="ContentType.HTML"-->

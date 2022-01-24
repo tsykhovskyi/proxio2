@@ -4,7 +4,7 @@ import { SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'http-preview-message-body-image',
-  template: ` <img [src]="payload" alt="" /> `,
+  template: ` <img [src]="payload" alt="" class="img-fluid" /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImageComponent {

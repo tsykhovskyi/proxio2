@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { HttpMessage } from '../../../http-packet.model';
 
 @Component({
@@ -16,7 +16,7 @@ import { HttpMessage } from '../../../http-packet.model';
           <ng-template ngbNavContent>
             <table class="table table-striped">
               <tbody>
-                <tr *ngFor="let entry of message.headers.entries">
+                <tr *ngFor="let entry of headers">
                   <td>{{ entry[0] }}</td>
                   <td>{{ entry[1] }}</td>
                 </tr>
@@ -27,7 +27,7 @@ import { HttpMessage } from '../../../http-packet.model';
         <li [ngbNavItem]="2">
           <a ngbNavLink>Raw</a>
           <ng-template ngbNavContent>
-            <pre>{{ message.rawHeaders }}</pre>
+            <pre>{{ headerBlockStr }}</pre>
           </ng-template>
         </li>
       </ul>
@@ -35,9 +35,22 @@ import { HttpMessage } from '../../../http-packet.model';
       <div [ngbNavOutlet]="headersNav" class="mt-2"></div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeadersComponent {
   selectedHeaderTab = 1;
 
-  @Input() message!: HttpMessage;
+  headers!: [string, string][];
+  headerBlockStr!: string;
+
+  private decoder: TextDecoder;
+
+  constructor() {
+    this.decoder = new TextDecoder();
+  }
+
+  @Input() set message(message: HttpMessage) {
+    this.headers = [...message.headerBlock.headers.entries()];
+    this.headerBlockStr = this.decoder.decode(message.headerBlock.raw);
+  }
 }

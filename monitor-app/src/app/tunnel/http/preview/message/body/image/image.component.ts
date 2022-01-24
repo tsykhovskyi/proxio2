@@ -13,7 +13,7 @@ export class ImageComponent {
   constructor() {}
 
   @Input() set message(message: HttpMessage) {
-    const contentType = message.headers.find('Content-Type');
+    const contentType = message.headerBlock.headers.get('Content-Type');
     if (!contentType || !message.body) {
       return;
     }
@@ -23,6 +23,7 @@ export class ImageComponent {
       return;
     }
 
+    // todo optimize;
     const payloadAscii = message.body.reduce((acc, v) => {
       acc += String.fromCharCode(v);
       return acc;

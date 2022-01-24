@@ -1,8 +1,8 @@
 import { readHeadersBlock } from './headers';
 import { EventEmitter } from '../../event-emitter';
 import { RequestImpl } from './models/request';
-import { ResponseImpl } from './models/response';
 import { HttpRequest } from '../tunnel-parser';
+import { MessageImpl } from './models/messageImpl';
 
 class Payload {
   public readonly chunks = new Map<number, Uint8Array>();
@@ -26,7 +26,7 @@ export declare interface HttpParser {
 
 export class HttpParser extends EventEmitter {
   private request: RequestImpl | null = null;
-  private response: ResponseImpl | null = null;
+  private response: MessageImpl | null = null;
 
   private inboundChunks = new Payload();
   private outboundChunks = new Payload();
@@ -94,18 +94,12 @@ export class HttpParser extends EventEmitter {
       return this.close();
     }
 
-    const [method, uri, protocol] = headersBlock.startLine;
-    this.request = new RequestImpl(
-      method,
-      uri,
-      protocol,
-      new TextDecoder().decode(chunk.subarray(0, headersBlock.blockEnd)),
-      headersBlock.headers
-    );
+    this.request = new RequestImpl(headersBlock);
     this.emit('request', this.request);
 
-    if (headersBlock.blockEnd < chunk.byteLength) {
-      this.request.data(chunk.subarray(headersBlock.blockEnd));
+    if (headersBlock.raw.byteLength < chunk.byteLength) {
+      // If bytes left in first chunk - emit thm as data chunk
+      this.request.data(chunk.subarray(headersBlock.raw.byteLength));
     }
   }
 
@@ -115,18 +109,10 @@ export class HttpParser extends EventEmitter {
       return this.close();
     }
 
-    const [protocol, statusCode, statusMessage] = headersBlock.startLine;
-
-    this.response = new ResponseImpl(
-      protocol,
-      parseInt(statusCode),
-      statusMessage,
-      new TextDecoder().decode(chunk.subarray(0, headersBlock.blockEnd)),
-      headersBlock.headers
-    );
+    this.response = new MessageImpl(headersBlock);
     this.request?.response(this.response);
-    if (headersBlock.blockEnd < chunk.byteLength) {
-      this.response.data(chunk.subarray(headersBlock.blockEnd));
+    if (headersBlock.raw.byteLength < chunk.byteLength) {
+      this.response.data(chunk.subarray(headersBlock.raw.byteLength));
     }
   }
 

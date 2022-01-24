@@ -12,11 +12,14 @@ import { HttpPacketModel } from '../http-packet.model';
           [class]="{ 'table-secondary': packet === activePacket }"
           class="pointer-event"
         >
-          <td>{{ packet.request.method }} {{ packet.request.uri }}</td>
+          <td>
+            {{ packet.request.headerBlock.startLine[0] // method }}
+            {{ packet.request.headerBlock.startLine[1] // uri }}
+          </td>
           <td>
             <span *ngIf="packet.response">
-              {{ packet.response.statusCode }}
-              {{ packet.response.statusMessage }}
+              {{ packet.response.headerBlock.startLine[1] // status code }}
+              {{ packet.response.headerBlock.startLine[2] // status message }}
             </span>
           </td>
         </tr>
@@ -31,15 +34,13 @@ import { HttpPacketModel } from '../http-packet.model';
     `,
   ],
 })
-export class HttpStatusListComponent implements OnInit {
+export class HttpStatusListComponent {
   @Input() packets!: HttpPacketModel[];
   @Output() onSelectPacket = new EventEmitter<HttpPacketModel | null>();
 
   activePacket: HttpPacketModel | null = null;
 
   constructor() {}
-
-  ngOnInit(): void {}
 
   selectPacket(packet: HttpPacketModel) {
     if (packet === this.activePacket) {

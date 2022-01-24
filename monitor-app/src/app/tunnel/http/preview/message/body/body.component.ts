@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { BodyTypeDefiner, ContentType } from '../service/body-type-definer';
 import { HttpMessage } from '../../../http-packet.model';
-import { HttpHeaders } from '../../../../../common/traffic/http/tunnel-parser';
+import { HeaderBlock } from '../../../../../common/traffic/http/tunnel-parser';
 
 @Component({
   selector: 'http-message-preview-body',
@@ -22,7 +22,7 @@ import { HttpHeaders } from '../../../../../common/traffic/http/tunnel-parser';
               ></http-preview-message-body-image>
               <http-preview-message-body-json
                 *ngSwitchCase="ContentTypes.JSON"
-                [content]="message.body"
+                [message]="message"
               ></http-preview-message-body-json>
             </div>
           </ng-template>

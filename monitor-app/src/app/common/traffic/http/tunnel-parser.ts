@@ -6,15 +6,16 @@ import {
 import { HttpParser } from './connection/http-parser';
 import { EventEmitter } from '../event-emitter';
 
-export interface HttpHeaders {
-  entries: [string, string][];
+export interface HeaderBlock {
+  raw: Uint8Array;
 
-  find(name: string): string | null;
+  startLine: [string, string, string];
+
+  headers: Map<string, string>;
 }
 
 export interface HttpMessage {
-  rawHeaders: string;
-  headers: HttpHeaders;
+  headerBlock: HeaderBlock;
 
   bodyLength: number;
 
@@ -23,18 +24,10 @@ export interface HttpMessage {
   on(event: 'close', listener: () => void): void;
 }
 
-export interface HttpResponse extends HttpMessage {
-  protocol: string;
-  statusCode: number;
-  statusMessage: string;
-}
-
 export interface HttpRequest extends HttpMessage {
-  method: string;
-  uri: string;
-  protocol: string;
+  headerBlock: HeaderBlock;
 
-  on(event: 'response', listener: (response: HttpResponse) => void): void;
+  on(event: 'response', listener: (response: HttpMessage) => void): void;
 
   on(event: 'data', listener: (chunk: Uint8Array) => void): void;
 

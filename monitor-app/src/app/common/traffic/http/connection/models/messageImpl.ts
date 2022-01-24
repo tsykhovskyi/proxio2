@@ -1,16 +1,16 @@
 import { EventEmitter } from '../../../event-emitter';
-import { HttpHeaders, HttpResponse } from '../../tunnel-parser';
+import { HeaderBlock } from '../../tunnel-parser';
 
-export abstract class Message extends EventEmitter {
+export class MessageImpl extends EventEmitter {
   public bodyLength: number = 0;
   private expectedBodyLength: number | null = null;
   private closed: boolean = false;
 
-  constructor(public rawHeaders: string, public headers: HttpHeaders) {
+  constructor(public headerBlock: HeaderBlock) {
     super();
 
-    let bodyLengthHeader = this.headers.find('Content-Length');
-    if (null !== bodyLengthHeader) {
+    const bodyLengthHeader = this.headerBlock.headers.get('Content-Length');
+    if (bodyLengthHeader) {
       this.expectedBodyLength = parseInt(bodyLengthHeader);
     }
   }

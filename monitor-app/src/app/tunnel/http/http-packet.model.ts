@@ -1,35 +1,17 @@
-import {
-  HttpHeaders,
-  HttpRequest,
-  HttpResponse,
-} from '../../common/traffic/http/tunnel-parser';
+import { HeaderBlock } from '../../common/traffic/http/tunnel-parser';
 
 export interface HttpMessage {
-  rawHeaders: string;
-  headers: HttpHeaders;
+  headerBlock: HeaderBlock;
   body: Uint8Array | null;
 }
 
-export interface HttpRequestMessage extends HttpMessage {
-  method: string;
-  uri: string;
-}
-
-export interface HttpResponseMessage extends HttpMessage {
-  statusCode: number;
-  statusMessage: string;
-}
-
 export class HttpPacketModel {
-  request: HttpRequestMessage;
-  response: HttpResponseMessage | null = null;
+  request: HttpMessage;
+  response: HttpMessage | null = null;
 
-  constructor(request: HttpRequest) {
+  constructor(headerBlock: HeaderBlock) {
     this.request = {
-      method: request.method,
-      uri: request.uri,
-      rawHeaders: request.rawHeaders,
-      headers: request.headers,
+      headerBlock,
       body: null,
     };
   }
@@ -38,19 +20,16 @@ export class HttpPacketModel {
     this.request.body = body;
   }
 
+  createResponse(headerBlock: HeaderBlock) {
+    this.response = {
+      headerBlock,
+      body: null,
+    };
+  }
+
   setResponseBody(body: Uint8Array) {
     if (this.response) {
       this.response.body = body;
     }
-  }
-
-  setResponse(response: HttpResponse) {
-    this.response = {
-      statusCode: response.statusCode,
-      statusMessage: response.statusMessage,
-      rawHeaders: response.rawHeaders,
-      headers: response.headers,
-      body: null,
-    };
   }
 }

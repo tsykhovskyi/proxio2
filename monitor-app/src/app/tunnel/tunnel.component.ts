@@ -42,24 +42,24 @@ export class TunnelComponent implements OnInit {
   }
 
   private createHttpPacket(request: HttpRequest) {
-    const decoder = new TextDecoder();
+    const packet = new HttpPacketModel(request.headerBlock);
 
-    const packet = new HttpPacketModel(request);
-    let reqBody: Uint8Array[] = [];
+    const requestChunks: Uint8Array[] = [];
     request.on('data', (chunk) => {
-      reqBody.push(chunk);
+      requestChunks.push(chunk);
     });
-    request.on('close', () => packet.setRequestBody(this.concat(reqBody)));
+    request.on('close', () =>
+      packet.setRequestBody(this.concat(requestChunks))
+    );
     request.on('response', (response) => {
-      packet.setResponse(response);
+      packet.createResponse(response.headerBlock);
 
-      let resBody: Uint8Array[] = [];
+      let responseChunks: Uint8Array[] = [];
       response.on('data', (chunk) => {
-        // resBody += decoder.decode(chunk);
-        resBody.push(chunk);
+        responseChunks.push(chunk);
       });
       response.on('close', () => {
-        packet.setResponseBody(this.concat(resBody));
+        packet.setResponseBody(this.concat(responseChunks));
       });
     });
 

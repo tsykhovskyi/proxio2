@@ -9,8 +9,16 @@ import { EventEmitter } from '../event-emitter';
 export interface HeaderBlock {
   raw: Uint8Array;
 
+  /**
+   * Contains 3 values that occur in HTTP start line
+   * For request: method uri protocolVersion. For ex. "GET /books/4 HTTP/1.1"
+   * For response: protocolVersion statusCode statusMessage. For ex. "HTTP/1.1 404 Not found"
+   */
   startLine: [string, string, string];
 
+  /**
+   * All header names are lowercase
+   */
   headers: Map<string, string>;
 }
 

@@ -4,7 +4,7 @@ import { HttpMessage } from '../../http-packet.model';
 @Component({
   selector: 'http-preview-message',
   template: `
-    <div>
+    <div class="mb-5">
       <http-preview-message-headers
         [message]="message"
       ></http-preview-message-headers>

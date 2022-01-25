@@ -39,7 +39,7 @@ export function readHeadersBlock(chunk: Uint8Array): HeaderBlock | null {
     }
 
     headers.set(
-      line.slice(0, delimPos).trim(),
+      line.slice(0, delimPos).trim().toLowerCase(),
       line.slice(delimPos + 1).trim()
     );
   }

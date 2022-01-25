@@ -40,7 +40,7 @@ type TabName = 'pretty' | 'raw';
         </li>
       </ul>
 
-      <div [ngbNavOutlet]="bodyNav" class="mb-5"></div>
+      <div [ngbNavOutlet]="bodyNav"></div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

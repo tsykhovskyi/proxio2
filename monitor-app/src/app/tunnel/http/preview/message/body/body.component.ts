@@ -7,10 +7,10 @@ import { HeaderBlock } from '../../../../../common/traffic/http/tunnel-parser';
   selector: 'http-message-preview-body',
   template: `
     <div [ngSwitch]="contentType">
-      <!--          <app-html-->
-      <!--            *ngSwitchCase="ContentType.HTML"-->
-      <!--            [content]="message.body"-->
-      <!--          ></app-html>-->
+      <http-preview-message-body-html
+        *ngSwitchCase="ContentTypes.HTML"
+        [message]="message"
+      ></http-preview-message-body-html>
       <http-preview-message-body-image
         *ngSwitchCase="ContentTypes.Image"
         [message]="message"

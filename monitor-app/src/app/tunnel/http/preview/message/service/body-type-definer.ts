@@ -13,7 +13,7 @@ export enum ContentType {
 })
 export class BodyTypeDefiner {
   guess(message: HttpMessage): ContentType {
-    const contentType = message.headerBlock.headers.get('Content-Type');
+    const contentType = message.headerBlock.headers.get('content-type');
     if (contentType) {
       if (contentType.startsWith('text/html')) {
         return ContentType.HTML;
@@ -21,7 +21,7 @@ export class BodyTypeDefiner {
       if (contentType.startsWith('application/json')) {
         return ContentType.JSON;
       }
-      if (contentType?.startsWith('image/')) {
+      if (contentType.startsWith('image/')) {
         return ContentType.Image;
       }
     }

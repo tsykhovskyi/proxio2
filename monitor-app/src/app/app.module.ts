@@ -12,6 +12,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { BodyComponent } from './tunnel/http/preview/message/body/body.component';
 import { ImageComponent } from './tunnel/http/preview/message/body/image/image.component';
 import { RawComponent } from './tunnel/http/preview/message/body/raw/raw.component';
+import { HtmlComponent } from './tunnel/http/preview/message/body/html/html.component';
 
 @NgModule({
   declarations: [
@@ -25,6 +26,7 @@ import { RawComponent } from './tunnel/http/preview/message/body/raw/raw.compone
     BodyComponent,
     ImageComponent,
     RawComponent,
+    HtmlComponent,
   ],
   imports: [BrowserModule, NgbModule],
   providers: [],

@@ -13,7 +13,7 @@ export class ImageComponent {
   constructor() {}
 
   @Input() set message(message: HttpMessage) {
-    const contentType = message.headerBlock.headers.get('Content-Type');
+    const contentType = message.headerBlock.headers.get('content-type');
     if (!contentType || !message.body) {
       return;
     }

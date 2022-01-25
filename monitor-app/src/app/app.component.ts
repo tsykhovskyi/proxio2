@@ -6,5 +6,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  hostname = window.location.hostname;
+  hostname = window.location.pathname.slice(1);
 }

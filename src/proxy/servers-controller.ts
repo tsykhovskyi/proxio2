@@ -74,9 +74,7 @@ export class ServersController extends EventEmitter {
       forwarder.connect(config.monitorPrivatePort, "127.0.0.1", () => {
         socket.pipe(forwarder).pipe(socket);
       });
-      forwarder.on("close", (hadError) => {
-        log("cliend socket was closed");
-      });
+      forwarder.on("close", (hadError) => {});
       return;
     }
 

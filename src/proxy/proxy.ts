@@ -16,7 +16,7 @@ export declare interface ProxyServer {
 export class ProxyServer extends EventEmitter {
   private readonly sshServer: SshServerInterface;
   private readonly serversController: ServersController;
-  private readonly tunnelStorage: TunnelStorage;
+  public readonly tunnelStorage: TunnelStorage;
   private readonly requestHandler: TunnelRequestHandler;
 
   constructor() {

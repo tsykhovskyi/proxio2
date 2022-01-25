@@ -34,10 +34,10 @@ export function tunnelMonitorUrl(tunnel: Tunnel) {
 
   return (
     "https://" +
-    tunnelSubdomain(tunnel) +
-    "." +
     config.monitorDomainName +
-    monitorAppPortSuffix()
+    monitorAppPortSuffix() +
+    "/" +
+    tunnelSubdomain(tunnel)
   );
 }
 

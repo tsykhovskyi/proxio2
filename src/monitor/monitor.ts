@@ -1,71 +1,40 @@
 import express from "express";
 import { Server } from "http";
 import { config } from "../config";
-import { WebSocket, WebSocketServer } from "ws";
-import { Tunnel } from "../proxy/contracts/tunnel";
 import { logger } from "../helper/logger";
-import { encodeTunnelChunk, encodeTunnelConnection } from "./ws/encoders";
+import { RequestUpgradeHandler } from "./ws/request-upgrade-handler";
+import { TunnelStorage } from "../proxy/tunnel-storage";
 
 const log = logger("MONITOR");
 
 export class Monitor {
   private server: Server | null = null;
-  private sockets = new Set<WebSocket>();
 
-  onTunnelOpened(tunnel: Tunnel) {
-    tunnel.on("connection", (packet) => {
-      this.sockets.forEach((socket) =>
-        socket.send(encodeTunnelConnection(packet))
-      );
-    });
-    tunnel.on("connection-chunk", (chunk) => {
-      this.sockets.forEach((socket) => {
-        socket.send(encodeTunnelChunk(chunk));
-      });
-    });
-    tunnel.on("close", () => {});
-  }
+  constructor(private tunnelStorage: TunnelStorage) {}
 
   run() {
-    const wss = this.createWebSocketServer();
-    this.runServer(wss);
+    this.runServer();
   }
 
-  runServer(wss: WebSocketServer) {
+  runServer() {
     const app = express();
+
+    const requestUpgradeHandler = new RequestUpgradeHandler(this.tunnelStorage);
 
     app.use(express.static(config.monitorApplicationDist));
 
     const server = app.listen(config.monitorPrivatePort, () =>
       log(`Monitor set up on port ${config.monitorPrivatePort}`)
     );
-    server.on("upgrade", (req, socket, head) => {
-      if (req.url !== "/traffic") {
-        socket.end();
-      }
-      wss.handleUpgrade(req, socket, head, (wsClient) => {
-        wss.emit("connection", wsClient, req);
-      });
-    });
+    server.on(
+      "upgrade",
+      requestUpgradeHandler.handle.bind(requestUpgradeHandler)
+    );
 
     this.server = server;
   }
 
   stop() {
     this.server?.close(() => log("Monitor is closed"));
-  }
-
-  private createWebSocketServer() {
-    const wss = new WebSocketServer({ noServer: true });
-    wss.on("connection", (socket, request) => {
-      this.sockets.add(socket);
-      log("new connection");
-      socket.on("close", (code) => {
-        log("remove connection");
-        this.sockets.delete(socket);
-      });
-    });
-
-    return wss;
   }
 }

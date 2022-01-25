@@ -4,10 +4,8 @@ import { Monitor } from "./monitor/monitor";
 const proxy = new ProxyServer();
 proxy.run();
 
-const monitor = new Monitor();
+const monitor = new Monitor(proxy.tunnelStorage);
 monitor.run();
-
-proxy.on("tunnel-opened", (tunnel) => monitor.onTunnelOpened(tunnel));
 
 // TODO close all connections
 // process.on("SIGINT", () => {

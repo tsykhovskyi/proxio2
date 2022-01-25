@@ -2,11 +2,8 @@ import { Tunnel } from "../../proxy/contracts/tunnel";
 import { PseudoTtyInfo, ServerChannel } from "ssh2";
 import { Terminal, WindowSize } from "./terminal";
 import EventEmitter from "events";
-import {
-  tunnelHttpsUrl,
-  tunnelHttpUrl,
-  tunnelMonitorUrl,
-} from "../../proxy/urls";
+import { HttpTunnelView } from "./view/http-tunnel-view";
+import { TcpTunnelView } from "./view/tcp-tunnel-view";
 
 export declare interface Channel {
   on(event: "close", listener: () => void);
@@ -14,70 +11,31 @@ export declare interface Channel {
 
 export class Channel extends EventEmitter {
   private terminal: Terminal;
+  private view: TcpTunnelView;
 
-  constructor(
-    private tunnel: Tunnel,
-    sshChannel: ServerChannel,
-    info: PseudoTtyInfo
-  ) {
+  constructor(tunnel: Tunnel, sshChannel: ServerChannel, info: PseudoTtyInfo) {
     super();
+    this.view = tunnel.http
+      ? new HttpTunnelView(tunnel)
+      : new TcpTunnelView(tunnel);
     this.terminal = new Terminal(sshChannel, info, () => this.emit("close"));
   }
 
   init() {
-    this.terminal.setTitle(`Proxio tunnel: ${this.tunnel.hostname}`);
+    this.view.on("update", () => this.updateStatistics());
+
+    this.terminal.setTitle(this.view.title());
 
     this.updateStatistics();
-    this.addEventListeners();
   }
 
   private updateStatistics() {
-    if (this.tunnel.http) {
-      this.terminal.setInfo([
-        ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
-        null,
-        ["Web interface", tunnelMonitorUrl(this.tunnel)],
-        ["Http forwarding", tunnelHttpUrl(this.tunnel)],
-        ["Https forwarding", tunnelHttpsUrl(this.tunnel)],
-        null,
-        ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
-        [
-          "",
-          [
-            this.tunnel.statistic.inboundTraffic,
-            this.tunnel.statistic.outboundTraffic,
-          ]
-            .map((s) => s.toString().padEnd(12))
-            .join(""),
-        ],
-      ]);
-    } else {
-      this.terminal.setInfo([
-        ["{bold}{green-fg}Proxio{/green-fg}{/bold}", ""],
-        null,
-        ["TCP forwarding", `Port: ${this.tunnel.port}`],
-        ["Traffic", ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join("")],
-        [
-          "",
-          [
-            this.tunnel.statistic.inboundTraffic,
-            this.tunnel.statistic.outboundTraffic,
-          ]
-            .map((s) => s.toString().padEnd(12))
-            .join(""),
-        ],
-      ]);
-    }
+    const lines = this.view.render();
+    this.terminal.setLines(lines);
   }
 
   windowResize(size: WindowSize) {
     this.updateStatistics();
     this.terminal.resize(size);
-  }
-
-  private addEventListeners() {
-    this.tunnel.on("connection-chunk", (packet) => {
-      this.updateStatistics();
-    });
   }
 }

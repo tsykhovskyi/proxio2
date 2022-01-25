@@ -36,11 +36,11 @@ export class Terminal {
     this.screen.title = title;
   }
 
-  setInfo(records: Array<[string, string] | null>) {
+  setLines(lines: Array<string>) {
     let curLine = 0;
-    for (const rec of records) {
-      if (rec !== null) {
-        this.infoBlock.setLine(curLine, rec[0].padEnd(20) + rec[1]);
+    for (const line of lines) {
+      if (line !== null) {
+        this.infoBlock.setLine(curLine, line);
       }
       curLine++;
     }
@@ -102,7 +102,7 @@ export class Terminal {
       top: 0,
       left: 0,
       scrollable: false,
-      height: 10,
+      height: "100%",
       content: "Hello there",
       tags: true,
       style: {

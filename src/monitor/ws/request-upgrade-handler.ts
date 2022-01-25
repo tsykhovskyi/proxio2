@@ -5,6 +5,7 @@ import { logger } from "../../helper/logger";
 import { TunnelStorage } from "../../proxy/tunnel-storage";
 import { encodeTunnelChunk, encodeTunnelConnection } from "./encoders";
 import { config } from "../../config";
+import { Tunnel } from "../../proxy/contracts/tunnel";
 
 const log = logger("MONITOR_WS");
 
@@ -28,25 +29,13 @@ export class RequestUpgradeHandler {
   }
 
   private onConnection(socket: WebSocket, request: IncomingMessage) {
-    const query = request.url?.split("?")[1] ?? "";
-    const hostnameKeyValue =
-      query
-        .split("&")
-        .map((kv) => kv.split("="))
-        .find(([k, v]) => k === "hostname") ?? null;
-    if (!hostnameKeyValue) {
-      socket.close(1002);
-      return;
-    }
-
-    const hostname = hostnameKeyValue[1] + "." + config.domainName;
-    const tunnel = this.tunnelStorage.findHttp(hostname);
+    const tunnel = this.getTunnelByUrl(request.url ?? "");
     if (!tunnel) {
       socket.close(1002);
       return;
     }
 
-    log(`New WS listener for: ${hostname}`);
+    log(`New WS listener for: ${tunnel.hostname}`);
     tunnel.on("connection", (packet) => {
       socket.send(encodeTunnelConnection(packet));
     });
@@ -56,5 +45,20 @@ export class RequestUpgradeHandler {
     tunnel.on("close", () => {
       socket.close(1001);
     });
+  }
+
+  private getTunnelByUrl(url: string): Tunnel | null {
+    const query = url.split("?")[1] ?? "";
+    const hostnameKeyValue =
+      query
+        .split("&")
+        .map((kv) => kv.split("="))
+        .find(([k, v]) => k === "hostname") ?? null;
+    if (!hostnameKeyValue) {
+      return null;
+    }
+
+    const hostname = hostnameKeyValue[1] + "." + config.domainName;
+    return this.tunnelStorage.findHttp(hostname);
   }
 }

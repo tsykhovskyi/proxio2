@@ -13,12 +13,39 @@ export declare interface HttpTunnelView {
 export interface Request {
   method: string;
   uri: string;
-  statusCode?: string;
-  statusMessage?: string;
+  time: number;
+  response?: {
+    statusCode: string;
+    statusMessage: string;
+    time: number;
+  };
+}
+
+class RequestsCollection {
+  private requests = new Map<string, Request>();
+  private limit = 15;
+
+  get(connectionId: string): Request {
+    return this.requests.get(connectionId) ?? ({} as Request);
+  }
+
+  add(connectionId: string, request: Request) {
+    for (let key of this.requests.keys()) {
+      if (this.requests.size < this.limit) {
+        break;
+      }
+      this.requests.delete(key);
+    }
+    this.requests.set(connectionId, request);
+  }
+
+  allReversed() {
+    return [...this.requests.values()].reverse();
+  }
 }
 
 export class HttpTunnelView extends TcpTunnelView {
-  private requests = new Map<string, Request>();
+  private requests = new RequestsCollection();
 
   title(): string {
     return `Proxio tunnel: ${this.tunnel.hostname}`;
@@ -34,6 +61,7 @@ export class HttpTunnelView extends TcpTunnelView {
       "",
       "Traffic".padEnd(20) +
         ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join(""),
+      "Requests:",
       "".padEnd(20) +
         [
           this.tunnel.statistic.inboundTraffic,
@@ -43,11 +71,19 @@ export class HttpTunnelView extends TcpTunnelView {
           .join(""),
     ];
 
-    for (const req of [...this.requests.values()].reverse()) {
-      lines.push(
-        `${req.method} ${req.uri}`.padEnd(40) +
-          (req.statusCode ? `${req.statusCode} ${req.statusMessage}` : "")
-      );
+    for (const req of this.requests.allReversed()) {
+      let line = `${req.method} ${req.uri}`.padEnd(40);
+      const res = req.response;
+      if (res) {
+        line += `${res.statusCode} ${res.statusMessage}`.padEnd(15);
+        const spentTime = res.time - req.time;
+        line +=
+          spentTime > 1000
+            ? (spentTime / 1000).toPrecision(2) + " s"
+            : spentTime + " ms";
+      }
+
+      lines.push(line);
     }
 
     return lines;
@@ -65,17 +101,21 @@ export class HttpTunnelView extends TcpTunnelView {
     }
 
     if (chunk.direction === "inbound") {
-      const req: Request = { method: startLine[0], uri: startLine[1] };
-      this.requests.set(chunk.connectionId, req);
+      const req: Request = {
+        method: startLine[0],
+        uri: startLine[1],
+        time: chunk.time,
+      };
+      this.requests.add(chunk.connectionId, req);
     } else {
       let req = this.requests.get(chunk.connectionId);
-      if (!req) {
-        return;
-      }
-      this.requests.set(chunk.connectionId, {
+      this.requests.add(chunk.connectionId, {
         ...req,
-        statusCode: startLine[1],
-        statusMessage: startLine[2],
+        response: {
+          statusCode: startLine[1],
+          statusMessage: startLine[2],
+          time: chunk.time,
+        },
       });
     }
 

@@ -9,16 +9,18 @@ export interface HttpMessage {
   body: Uint8Array | null;
 }
 
+export interface HttpTiming {
+  requestStart: number;
+  requestEnd?: number;
+  responseStart?: number;
+  responseEnd?: number;
+}
+
 export class HttpPacketModel {
   request: HttpMessage;
   response: HttpMessage | null = null;
 
-  timing: {
-    requestStart: number;
-    requestEnd?: number;
-    responseStart?: number;
-    responseEnd?: number;
-  };
+  timing: HttpTiming;
 
   constructor(request: ParserHttpRequest) {
     this.request = {

@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { HttpMessage } from '../../../http-packet.model';
+
+type TabName = 'headers' | 'raw';
 
 @Component({
   selector: 'http-preview-message-headers',
@@ -11,7 +13,7 @@ import { HttpMessage } from '../../../http-packet.model';
         [(activeId)]="selectedHeaderTab"
         class="nav-tabs"
       >
-        <li [ngbNavItem]="1">
+        <li [ngbNavItem]="'headers'">
           <a ngbNavLink>Headers</a>
           <ng-template ngbNavContent>
             <table class="table table-striped">
@@ -24,7 +26,7 @@ import { HttpMessage } from '../../../http-packet.model';
             </table>
           </ng-template>
         </li>
-        <li [ngbNavItem]="2">
+        <li [ngbNavItem]="'raw'">
           <a ngbNavLink>Raw</a>
           <ng-template ngbNavContent>
             <pre>{{ headerBlockStr }}</pre>
@@ -35,10 +37,9 @@ import { HttpMessage } from '../../../http-packet.model';
       <div [ngbNavOutlet]="headersNav" class="mt-2"></div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeadersComponent {
-  selectedHeaderTab = 1;
+  selectedHeaderTab: TabName = 'headers';
 
   headers!: [string, string][];
   headerBlockStr!: string;

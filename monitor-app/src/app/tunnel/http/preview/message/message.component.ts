@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { HttpMessage } from '../../http-packet.model';
 
 @Component({
@@ -13,7 +13,6 @@ import { HttpMessage } from '../../http-packet.model';
       ></http-message-preview-body>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MessageComponent {
   @Input() message!: HttpMessage;

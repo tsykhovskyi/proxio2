@@ -13,6 +13,7 @@ import { BodyComponent } from './tunnel/http/preview/message/body/body.component
 import { ImageComponent } from './tunnel/http/preview/message/body/image/image.component';
 import { RawComponent } from './tunnel/http/preview/message/body/raw/raw.component';
 import { HtmlComponent } from './tunnel/http/preview/message/body/html/html.component';
+import { TimingComponent } from './tunnel/http/preview/timing/timing.component';
 
 @NgModule({
   declarations: [
@@ -27,6 +28,7 @@ import { HtmlComponent } from './tunnel/http/preview/message/body/html/html.comp
     ImageComponent,
     RawComponent,
     HtmlComponent,
+    TimingComponent,
   ],
   imports: [BrowserModule, NgbModule],
   providers: [],

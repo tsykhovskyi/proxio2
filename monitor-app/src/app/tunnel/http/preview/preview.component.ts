@@ -9,6 +9,11 @@ import { HttpPacketModel } from '../http-packet.model';
         [activeIds]="['accRequest', 'accResponse']"
         #reqResAccordion="ngbAccordion"
       >
+        <ngb-panel id="accTiming" title="Timing">
+          <ng-template ngbPanelContent>
+            <http-preview-timing [timing]="packet.timing"></http-preview-timing>
+          </ng-template>
+        </ngb-panel>
         <ngb-panel id="accRequest" title="Request">
           <ng-template ngbPanelContent>
             <http-preview-message

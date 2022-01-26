@@ -68,22 +68,18 @@ export class JsonComponent implements OnChanges, AfterViewInit {
   }
 
   private render() {
-    console.log('render run');
     if (!this.jsonView) {
       // if element is not ready
       return;
     }
-    console.log('vie wis ready');
     if (this.activeTab !== 'pretty') {
       // Do not run heave json parse if not active
       return;
     }
 
-    console.log('start pretty json');
     if (this.message.body !== null) {
       const bodyStr = new TextDecoder().decode(this.message.body);
       const formatter = new JSONFormatter(JSON.parse(bodyStr), Infinity);
-      console.log('pretty ready');
       this.jsonNode = formatter.render();
     }
 
@@ -93,7 +89,6 @@ export class JsonComponent implements OnChanges, AfterViewInit {
     }
 
     if (this.jsonNode) {
-      console.log('pretty ready');
       this.jsonView.nativeElement.appendChild(this.jsonNode);
     }
   }

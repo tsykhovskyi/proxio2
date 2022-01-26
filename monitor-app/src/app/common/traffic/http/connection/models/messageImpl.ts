@@ -1,36 +1,36 @@
 import { EventEmitter } from '../../../event-emitter';
-import { HeaderBlock } from '../../tunnel-parser';
+import { HeaderBlock, HttpMessage } from '../../tunnel-parser';
 
-export class MessageImpl extends EventEmitter {
+export class MessageImpl extends EventEmitter implements HttpMessage {
   public bodyLength: number = 0;
   private expectedBodyLength: number | null = null;
   private closed: boolean = false;
 
-  constructor(public headerBlock: HeaderBlock) {
+  constructor(public headerBlock: HeaderBlock, public time: number) {
     super();
 
-    const bodyLengthHeader = this.headerBlock.headers.get('Content-Length');
+    const bodyLengthHeader = this.headerBlock.headers.get('content-length');
     if (bodyLengthHeader) {
       this.expectedBodyLength = parseInt(bodyLengthHeader);
     }
   }
 
-  data(chunk: Uint8Array) {
-    this.emit('data', chunk);
+  data(chunk: Uint8Array, time: number) {
+    this.emit('data', chunk, time);
 
     this.bodyLength += chunk.byteLength;
     if (
       this.expectedBodyLength !== null &&
       this.bodyLength >= this.expectedBodyLength
     ) {
-      this.close();
+      this.close(time);
     }
   }
 
-  close() {
+  close(time: number) {
     if (!this.closed) {
       this.closed = true;
-      this.emit('close');
+      this.emit('close', time);
     }
   }
 }

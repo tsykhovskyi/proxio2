@@ -96,7 +96,9 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
       });
 
       this.log(
-        `${direction === "inbound" ? "<-" : "->"} ${chunk.byteLength} bytes`
+        `${connectionId}: ${direction === "inbound" ? "<-" : "->"} ${
+          chunk.byteLength
+        } bytes`
       );
 
       trafficBytes += chunk.length;

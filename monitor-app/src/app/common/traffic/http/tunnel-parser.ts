@@ -19,7 +19,7 @@ export interface HeaderBlock {
   /**
    * All header names are lowercase
    */
-  headers: Map<string, string>;
+  headers: Map<Lowercase<string>, string>;
 }
 
 export interface HttpMessage {
@@ -27,19 +27,22 @@ export interface HttpMessage {
 
   bodyLength: number;
 
-  on(event: 'data', listener: (chunk: Uint8Array) => void): void;
+  /**
+   * Time in ms after connection was established
+   */
+  time: number;
 
-  on(event: 'close', listener: () => void): void;
+  on(event: 'data', listener: (chunk: Uint8Array, time: number) => void): void;
+
+  on(event: 'close', listener: (time: number) => void): void;
 }
 
 export interface HttpRequest extends HttpMessage {
-  headerBlock: HeaderBlock;
-
   on(event: 'response', listener: (response: HttpMessage) => void): void;
 
-  on(event: 'data', listener: (chunk: Uint8Array) => void): void;
+  on(event: 'data', listener: (chunk: Uint8Array, time: number) => void): void;
 
-  on(event: 'close', listener: () => void): void;
+  on(event: 'close', listener: (time: number) => void): void;
 }
 
 export declare interface TunnelParser {
@@ -57,15 +60,18 @@ export class TunnelParser extends EventEmitter {
 
   private onConnection(connection: TunnelConnection) {
     const parser = this.getOrInitParser(connection.id);
-    if (connection.state === 'closed') {
-      parser.connectionClosed(connection.chunksCnt);
+
+    if (connection.state === 'open') {
+      parser.connectionOpened(connection.timestamp);
+    } else if (connection.state === 'closed') {
+      parser.connectionClosed(connection.chunksCnt, connection.timestamp);
     }
   }
 
   private onConnectionChunk(chunk: TunnelChunk) {
     const httpParser = this.getOrInitParser(chunk.connectionId);
 
-    httpParser.chunk(chunk.direction, chunk.chunk, chunk.chunkNumber);
+    httpParser.chunk(chunk);
   }
 
   private getOrInitParser(connectionId: string): HttpParser {

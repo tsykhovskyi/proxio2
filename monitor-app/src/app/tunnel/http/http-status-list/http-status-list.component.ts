@@ -22,6 +22,11 @@ import { HttpPacketModel } from '../http-packet.model';
               {{ packet.response.headerBlock.startLine[2] // status message }}
             </span>
           </td>
+          <td>
+            <span *ngIf="packet.timing.responseEnd">
+              {{ packet.timing.responseEnd - packet.timing.requestStart }} ms
+            </span>
+          </td>
         </tr>
       </tbody>
     </table>

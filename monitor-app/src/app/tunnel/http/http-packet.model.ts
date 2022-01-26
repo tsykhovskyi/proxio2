@@ -1,4 +1,8 @@
-import { HeaderBlock } from '../../common/traffic/http/tunnel-parser';
+import {
+  HeaderBlock,
+  HttpRequest as ParserHttpRequest,
+  HttpMessage as ParserHttpMessage,
+} from '../../common/traffic/http/tunnel-parser';
 
 export interface HttpMessage {
   headerBlock: HeaderBlock;
@@ -9,27 +13,40 @@ export class HttpPacketModel {
   request: HttpMessage;
   response: HttpMessage | null = null;
 
-  constructor(headerBlock: HeaderBlock) {
+  timing: {
+    requestStart: number;
+    requestEnd?: number;
+    responseStart?: number;
+    responseEnd?: number;
+  };
+
+  constructor(request: ParserHttpRequest) {
     this.request = {
-      headerBlock,
+      headerBlock: request.headerBlock,
       body: null,
+    };
+    this.timing = {
+      requestStart: request.time,
     };
   }
 
-  setRequestBody(body: Uint8Array) {
+  setRequestBody(body: Uint8Array, time: number) {
     this.request.body = body;
+    this.timing.requestEnd = time;
   }
 
-  createResponse(headerBlock: HeaderBlock) {
+  createResponse(response: ParserHttpMessage) {
     this.response = {
-      headerBlock,
+      headerBlock: response.headerBlock,
       body: null,
     };
+    this.timing.responseStart = response.time;
   }
 
-  setResponseBody(body: Uint8Array) {
+  setResponseBody(body: Uint8Array, time: number) {
     if (this.response) {
       this.response.body = body;
     }
+    this.timing.responseEnd = time;
   }
 }

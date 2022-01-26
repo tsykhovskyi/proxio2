@@ -42,7 +42,7 @@ export function decodeTunnelChunk(
     .map((v) => v.toString(16).padStart(2, '0'))
     .join('');
   const chunkNumber = dv.getUint32(9);
-  const time = dv.getUint32(3);
+  const time = dv.getUint32(13);
   const chunk = buffer.slice(17);
 
   return <TunnelChunk>{

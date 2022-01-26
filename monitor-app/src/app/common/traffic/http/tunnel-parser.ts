@@ -61,10 +61,8 @@ export class TunnelParser extends EventEmitter {
   private onConnection(connection: TunnelConnection) {
     const parser = this.getOrInitParser(connection.id);
 
-    if (connection.state === 'open') {
-      parser.connectionOpened(connection.timestamp);
-    } else if (connection.state === 'closed') {
-      parser.connectionClosed(connection.chunksCnt, connection.timestamp);
+    if (connection.state === 'closed') {
+      parser.connectionClosed(connection.chunksCnt);
     }
   }
 
@@ -81,13 +79,9 @@ export class TunnelParser extends EventEmitter {
       this.httpParsers.set(connectionId, httpParser);
 
       httpParser.on('request', (request) => {
-        request.on('response', (response) =>
-          response.on('close', () => {
-            this.httpParsers.delete(connectionId);
-          })
-        );
         this.emit('request', request);
       });
+      httpParser.on('close', () => this.httpParsers.delete(connectionId));
     }
 
     return httpParser;

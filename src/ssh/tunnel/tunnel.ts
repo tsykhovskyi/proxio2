@@ -70,8 +70,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
    */
   protected forwardSshChannel(socket: Socket, sshChannel: ServerChannel) {
     const connectionId = randomBytes(8).toString("hex");
-    let inboundChunksCnt = 0;
-    let outboundChunksCnt = 0;
+    let chunksCnt = 0;
     let trafficBytes = 0;
     let openedTime = Date.now();
 
@@ -80,7 +79,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
         id: connectionId,
         timestamp: Date.now(),
         state,
-        chunksCnt: inboundChunksCnt + outboundChunksCnt,
+        chunksCnt: chunksCnt,
         trafficBytes,
       });
     };
@@ -89,8 +88,7 @@ export abstract class SshTunnel extends EventEmitter implements Tunnel {
       this.emit("connection-chunk", <TunnelChunk>{
         connectionId,
         direction,
-        chunkNumber:
-          direction === "inbound" ? inboundChunksCnt++ : outboundChunksCnt++,
+        chunkNumber: chunksCnt++,
         time: Date.now() - openedTime,
         chunk,
       });

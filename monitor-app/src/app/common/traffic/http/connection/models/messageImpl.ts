@@ -33,4 +33,8 @@ export class MessageImpl extends EventEmitter implements HttpMessage {
       this.emit('close', time);
     }
   }
+
+  isClosed() {
+    return this.closed;
+  }
 }

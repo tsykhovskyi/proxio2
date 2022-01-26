@@ -22,75 +22,92 @@ class Payload {
 export declare interface HttpParser {
   on(event: 'request', listener: (request: HttpRequest) => void): void;
 
+  on(event: 'close', listener: () => void): void;
+
   removeAllListeners(event: 'request'): void;
 }
 
 export class HttpParser extends EventEmitter {
-  private isProcessingHttp: boolean = false;
-
   private request: RequestImpl | null = null;
   private response: MessageImpl | null = null;
 
-  private inboundChunks = new Payload();
-  private outboundChunks = new Payload();
+  private payload = new Payload();
+  private lastInboundTime = 0;
+  private lastOutboundTime = 0;
 
   private closed: boolean = false;
   private totalHttpChunksCnt: null | number = null;
-  private connectionDuration: number = 0;
-  private connectionStartTime: number = 0;
 
   chunk(chunk: TunnelChunk) {
     if (this.closed) {
       return;
     }
-    const payload =
-      chunk.direction === 'inbound' ? this.inboundChunks : this.outboundChunks;
-
-    payload.chunks.set(chunk.chunkNumber, chunk);
+    this.payload.chunks.set(chunk.chunkNumber, chunk);
     this.check();
   }
 
-  connectionOpened(timestamp: number) {
-    this.connectionStartTime = timestamp;
-  }
-
-  connectionClosed(chunksCnt: number, timestamp: number) {
+  connectionClosed(chunksCnt: number) {
     if (this.closed) {
       return;
     }
     this.totalHttpChunksCnt = chunksCnt;
-    this.connectionDuration = timestamp - this.connectionStartTime;
     this.check();
   }
 
   private check() {
     let chunk;
-    // Read request chunks
-    while (null !== (chunk = this.inboundChunks.next())) {
-      if (this.inboundChunks.current === 0) {
-        this.initRequest(chunk);
-      } else {
-        this.request?.data(chunk.chunk, chunk.time);
+    while (null !== (chunk = this.payload.next())) {
+      if (this.closed) {
+        return;
       }
-    }
 
-    // Read response chunks
-    while (null !== (chunk = this.outboundChunks.next())) {
-      if (this.outboundChunks.current === 0) {
-        this.initResponse(chunk);
+      if (chunk.direction === 'inbound') {
+        this.lastInboundTime = chunk.time;
+        // if inbound chunk received
+        if (this.request === null && this.response === null) {
+          this.initRequest(chunk);
+        } else if (this.request !== null && this.response === null) {
+          // If request created but response has not yet started
+          this.request.data(chunk.chunk, chunk.time);
+        } else if (this.request !== null && this.response !== null) {
+          // Finish existed http packet and init new request
+          this.request.close(this.lastInboundTime);
+          this.response.close(this.lastOutboundTime);
+          this.request = null;
+          this.response = null;
+
+          this.initRequest(chunk);
+        } else {
+          // Unexpected behaviour
+          this.close();
+        }
       } else {
-        this.response?.data(chunk.chunk, chunk.time);
+        this.lastOutboundTime = chunk.time;
+        // if outbound chunk received
+        if (this.request === null) {
+          // Unexpected behaviour: request should exist
+          this.close();
+        } else {
+          if (this.response === null) {
+            this.request.close(this.lastInboundTime);
+            this.initResponse(chunk);
+          } else {
+            this.response.data(chunk.chunk, chunk.time);
+            if (this.response.isClosed()) {
+              this.request = null;
+              this.response = null;
+            }
+          }
+        }
       }
     }
 
     // Check if messages can be closed
-    if (
-      this.totalHttpChunksCnt !== null &&
-      this.totalHttpChunksCnt ===
-        this.inboundChunks.current + 1 + (this.outboundChunks.current + 1)
-    ) {
-      this.request?.close(this.connectionDuration);
-      this.response?.close(this.connectionDuration);
+    if (this.totalHttpChunksCnt === this.payload.current + 1) {
+      this.request?.close(this.lastInboundTime);
+      this.response?.close(this.lastOutboundTime);
+
+      this.close();
     }
   }
 
@@ -132,5 +149,6 @@ export class HttpParser extends EventEmitter {
 
   private close() {
     this.closed = true;
+    this.emit('close');
   }
 }

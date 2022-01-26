@@ -25,8 +25,8 @@ class RequestsCollection {
   private requests = new Map<string, Request>();
   private limit = 15;
 
-  get(connectionId: string): Request {
-    return this.requests.get(connectionId) ?? ({} as Request);
+  get(connectionId: string): Request | null {
+    return this.requests.get(connectionId) ?? null;
   }
 
   add(connectionId: string, request: Request) {
@@ -94,30 +94,18 @@ export class HttpTunnelView extends TcpTunnelView {
       // Only analyze first chunk
       return;
     }
+    // todo multiple http on same connection
 
     const startLine = this.readFirstLine(chunk.chunk);
-    if (startLine == null) {
+    if (!startLine) {
       return;
     }
-
-    if (chunk.direction === "inbound") {
-      const req: Request = {
-        method: startLine[0],
-        uri: startLine[1],
-        time: chunk.time,
-      };
-      this.requests.add(chunk.connectionId, req);
-    } else {
-      let req = this.requests.get(chunk.connectionId);
-      this.requests.add(chunk.connectionId, {
-        ...req,
-        response: {
-          statusCode: startLine[1],
-          statusMessage: startLine[2],
-          time: chunk.time,
-        },
-      });
-    }
+    const req = {
+      method: startLine[0],
+      uri: startLine[1],
+      time: chunk.time,
+    };
+    this.requests.add(chunk.connectionId, req);
 
     this.emitUpdate();
   }

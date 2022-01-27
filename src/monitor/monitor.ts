@@ -21,7 +21,14 @@ export class Monitor {
 
     const requestUpgradeHandler = new RequestUpgradeHandler(this.tunnelStorage);
 
-    app.use(express.static(config.monitorApplicationDist));
+    app.use(/^\/([a-z0-9.]+\.(js|css|ico))$/, (req, res) => {
+      const path = req.params[0];
+      res.sendFile(config.monitorApplicationDist + "/" + path);
+    });
+
+    app.use("*", (req, res) =>
+      res.sendFile(config.monitorApplicationDist + "/index.html")
+    );
 
     const server = app.listen(config.monitorPrivatePort, () =>
       log(`Monitor set up on port ${config.monitorPrivatePort}`)

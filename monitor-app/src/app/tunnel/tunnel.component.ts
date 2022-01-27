@@ -31,7 +31,9 @@ export class TunnelComponent implements OnInit {
 
   ngOnInit(): void {
     const parser = createHttpParserFromWs(
-      new WebSocket(`ws://monitor.localhost/traffic?hostname=${this.hostname}`)
+      new WebSocket(
+        `ws://${window.location.host}/traffic?hostname=${this.hostname}`
+      )
     );
 
     parser.on('request', (request) => {

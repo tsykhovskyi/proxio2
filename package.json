@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx ts-node -r dotenv/config src/index.ts",
-    "test": "npx ts-node src/proxy/stream.ts",
+    "dev": "npx ts-node -r dotenv/config src/index.ts",
+    "start": "npx tsc && node -r dotenv/config dist/index.js",
     "fmt": "npx prettier -w ."
   },
   "keywords": [],

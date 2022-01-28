@@ -1,51 +1,18 @@
-import { Tunnel, TunnelChunk } from "../../../proxy/contracts/tunnel";
+import { TunnelChunk } from "../../../proxy/contracts/tunnel";
 import {
   tunnelHttpsUrl,
   tunnelHttpUrl,
   tunnelMonitorUrl,
 } from "../../../proxy/urls";
 import { TcpTunnelView } from "./tcp-tunnel-view";
+import { ChunkParser } from "./parser/chunk-parser";
 
 export declare interface HttpTunnelView {
   on(event: "update", listener: () => void);
 }
 
-export interface Request {
-  method: string;
-  uri: string;
-  time: number;
-  response?: {
-    statusCode: string;
-    statusMessage: string;
-    time: number;
-  };
-}
-
-class RequestsCollection {
-  private requests = new Map<string, Request>();
-  private limit = 15;
-
-  get(connectionId: string): Request | null {
-    return this.requests.get(connectionId) ?? null;
-  }
-
-  add(connectionId: string, request: Request) {
-    for (let key of this.requests.keys()) {
-      if (this.requests.size < this.limit) {
-        break;
-      }
-      this.requests.delete(key);
-    }
-    this.requests.set(connectionId, request);
-  }
-
-  allReversed() {
-    return [...this.requests.values()].reverse();
-  }
-}
-
 export class HttpTunnelView extends TcpTunnelView {
-  private requests = new RequestsCollection();
+  private chunkParser = new ChunkParser(15);
 
   title(): string {
     return `Proxio tunnel: ${this.tunnel.hostname}`;
@@ -71,60 +38,29 @@ export class HttpTunnelView extends TcpTunnelView {
       "Requests:",
     ];
 
-    for (const req of this.requests.allReversed()) {
-      let line = `${req.method} ${req.uri}`.padEnd(40);
-      const res = req.response;
-      if (res) {
-        line += `${res.statusCode} ${res.statusMessage}`.padEnd(15);
-        const spentTime = res.time - req.time;
-        line +=
-          spentTime > 1000
-            ? (spentTime / 1000).toPrecision(2) + " s"
-            : spentTime + " ms";
-      }
+    const requests = this.chunkParser.requestsInfo();
+    for (const req of requests) {
+      const time = req[2] !== 0 ? req[2].toString() + " ms" : "";
 
-      lines.push(line);
+      lines.push(this.cell(req[0], 40) + this.cell(req[1], 20) + time);
     }
 
     return lines;
   }
 
-  protected onConnectionChunk(chunk: TunnelChunk) {
-    if (chunk.chunkNumber !== 0) {
-      // Only analyze first chunk
-      return;
-    }
-    // todo multiple http on same connection
-
-    const startLine = this.readFirstLine(chunk.chunk);
-    if (!startLine) {
-      return;
-    }
-    const req = {
-      method: startLine[0],
-      uri: startLine[1],
-      time: chunk.time,
-    };
-    this.requests.add(chunk.connectionId, req);
-
-    this.emitUpdate();
+  /**
+   * Fill string into cell size.
+   * Fill empty positions with spaces. last position will always be a space
+   */
+  protected cell(cell: string, length: number): string {
+    return cell.length < length
+      ? cell.padEnd(length)
+      : cell.substring(0, length - 4) + "... ";
   }
 
-  private readFirstLine(buffer: Uint8Array): [string, string, string] | null {
-    let end = buffer.findIndex((v) => v === 0xa);
-    if (end === -1) {
-      return null;
+  protected onConnectionChunk(chunk: TunnelChunk) {
+    if (this.chunkParser.chunk(chunk)) {
+      this.emitUpdate();
     }
-    if (buffer[end - 1] === 0xd) {
-      end--;
-    }
-
-    const str = new TextDecoder().decode(buffer.slice(0, end));
-    const parts = str.split(" ");
-    if (parts.length < 3) {
-      return null;
-    }
-
-    return [parts[0], parts[1], parts.slice(2).join(" ")];
   }
 }

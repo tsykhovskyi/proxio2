@@ -53,7 +53,7 @@ export class Terminal {
 
   private render() {
     this.screen.render();
-    // this.channel.emit("resize");
+    this.channel.emit("resize");
     // // XXX This fake resize event is needed for some terminals in order to
     // // have everything display correctly
     this.screen.program.emit("resize");

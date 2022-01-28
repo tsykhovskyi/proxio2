@@ -41,7 +41,6 @@ export class SshServer extends EventEmitter implements SshServerInterface {
       const ptyChannelFactory = new ChannelFactory();
       ptyChannelFactory.result.then((pty) => {
         pty.init();
-        pty.on("close", () => connection.end());
       });
 
       connection

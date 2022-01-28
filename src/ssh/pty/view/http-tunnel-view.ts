@@ -61,7 +61,6 @@ export class HttpTunnelView extends TcpTunnelView {
       "",
       "Traffic".padEnd(20) +
         ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join(""),
-      "Requests:",
       "".padEnd(20) +
         [
           this.tunnel.statistic.inboundTraffic,
@@ -69,6 +68,7 @@ export class HttpTunnelView extends TcpTunnelView {
         ]
           .map((s) => s.toString().padEnd(12))
           .join(""),
+      "Requests:",
     ];
 
     for (const req of this.requests.allReversed()) {

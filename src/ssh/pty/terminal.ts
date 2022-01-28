@@ -14,11 +14,7 @@ export class Terminal {
   private screen: Widgets.Screen;
   private infoBlock: Widgets.BoxElement;
 
-  constructor(
-    private channel: ServerChannel,
-    ptyInfo: PseudoTtyInfo,
-    private closeCb: () => void
-  ) {
+  constructor(private channel: ServerChannel, ptyInfo: PseudoTtyInfo) {
     this.rows = ptyInfo.rows;
     this.columns = ptyInfo.cols;
     this.term = ptyInfo["term"] ?? "ansi";
@@ -57,7 +53,7 @@ export class Terminal {
 
   private render() {
     this.screen.render();
-    this.channel.emit("resize");
+    // this.channel.emit("resize");
     // // XXX This fake resize event is needed for some terminals in order to
     // // have everything display correctly
     this.screen.program.emit("resize");
@@ -89,8 +85,11 @@ export class Terminal {
     screen.program.attr("invisible", true);
 
     screen.key(["escape", "q", "C-c"], (ch, key) => {
-      this.screen.destroy();
-      this.closeCb();
+      screen.destroy();
+    });
+
+    screen.on("destroy", () => {
+      this.channel.close();
     });
 
     return screen;
@@ -103,7 +102,7 @@ export class Terminal {
       left: 0,
       scrollable: false,
       height: "100%",
-      content: "Hello there",
+      content: "Proxio monitor PTY",
       tags: true,
       style: {
         fg: "white",

@@ -5,10 +5,6 @@ import EventEmitter from "events";
 import { HttpTunnelView } from "./view/http-tunnel-view";
 import { TcpTunnelView } from "./view/tcp-tunnel-view";
 
-export declare interface Channel {
-  on(event: "close", listener: () => void);
-}
-
 export class Channel extends EventEmitter {
   private terminal: Terminal;
   private view: TcpTunnelView;
@@ -18,7 +14,7 @@ export class Channel extends EventEmitter {
     this.view = tunnel.http
       ? new HttpTunnelView(tunnel)
       : new TcpTunnelView(tunnel);
-    this.terminal = new Terminal(sshChannel, info, () => this.emit("close"));
+    this.terminal = new Terminal(sshChannel, info);
   }
 
   init() {

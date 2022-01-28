@@ -34,8 +34,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
   }
 
   run() {
-    this.server.on("connection", (connection) => {
-      log("Client connected!");
+    this.server.on("connection", (connection, connectionInfo) => {
       let username = "";
       let tunnel: SshTunnel | null = null;
       const ptyChannelFactory = new ChannelFactory();
@@ -46,7 +45,16 @@ export class SshServer extends EventEmitter implements SshServerInterface {
       connection
         .on("authentication", (ctx) => {
           username = ctx.username;
+          log(`authentication method: ${ctx.method}`);
+          if (ctx.method === "password") {
+            log(`with password ${Buffer.from(ctx.password).toString()}`);
+          }
           ctx.accept();
+        })
+        .on("ready", () => {
+          log(
+            `[${connectionInfo.ip}] Client connected. Username: "${username}"`
+          );
         })
         .on("session", (accept, reject) => {
           const session = accept();

@@ -21,7 +21,7 @@ export class Monitor {
     app.use("*", (req, res) => {
       let publicPath;
       if (req.hostname === config.domainName) {
-        publicPath = path.resolve(__dirname, `./public`);
+        publicPath = config.frontPageDist;
       } else if (req.hostname === config.monitorDomainName) {
         publicPath = config.monitorApplicationDist;
       } else {

@@ -25,6 +25,8 @@ export const config = {
     "../monitor-app/dist/monitor-app"
   ),
 
+  frontPageDist: path.join(__dirname, "./monitor/public"),
+
   /**
    * SSH server config
    */

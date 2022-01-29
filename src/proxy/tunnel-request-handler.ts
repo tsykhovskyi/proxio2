@@ -2,6 +2,7 @@ import { TunnelStorage } from "./tunnel-storage";
 import { config } from "../config";
 import { generateAlphaNum } from "../helper/generator";
 import { TunnelRequest } from "./contracts/tunnel";
+import { createServer } from "net";
 
 type AddressRequest = {
   subdomain: string;
@@ -18,17 +19,33 @@ export class TunnelRequestHandler {
   /**
    * Return accepted/adjusted tunnel address and port or false if tunnel can not be accepted
    */
-  handle(request: TunnelRequest): { hostname: string; port: number } | false {
+  async handle(
+    request: TunnelRequest
+  ): Promise<{ hostname: string; port: number }> {
     if (request.bindPort !== 80) {
       if (this.tunnelStorage.findTcp(request.bindPort)) {
-        return false;
+        throw new Error(`Port ${request.bindPort} is in use`);
       }
+
+      // double-check if port is free by attempting to open tcp server on it
+      await new Promise((resolve, reject) => {
+        const checkServer = createServer();
+        checkServer.once("error", () =>
+          reject(`Unable to start TCP server on port ${request.bindPort}`)
+        );
+        checkServer.listen(request.bindPort, () =>
+          checkServer.close(() => resolve(true))
+        );
+      });
+
       return { hostname: request.bindAddr, port: request.bindPort };
     }
 
     const expectedAddress = this.parseAddressRequest(request.bindAddr);
     if (expectedAddress === false) {
-      return false;
+      throw new Error(
+        `Unable to define expected address for ${request.bindAddr}`
+      );
     }
 
     // Check user expected hostname
@@ -38,7 +55,9 @@ export class TunnelRequestHandler {
           this.createHostname(expectedAddress.subdomain)
         )
       ) {
-        return false;
+        throw new Error(
+          `Unable to provide expected address for ${expectedAddress}`
+        );
       }
 
       return { hostname: expectedAddress.hostname, port: 80 };
@@ -67,8 +86,7 @@ export class TunnelRequestHandler {
       }
     }
 
-    console.error("Unable to suggest domain for connection");
-    return false;
+    throw new Error("Unable to suggest domain for connection");
   }
 
   private parseAddressRequest(address: string): AddressRequest | false {

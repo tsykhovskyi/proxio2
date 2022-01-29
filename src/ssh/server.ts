@@ -101,7 +101,9 @@ export class SshServer extends EventEmitter implements SshServerInterface {
                 ptyChannelFactory.setTunnel(tunnel);
                 this.emit("tunnel-opened", tunnel);
               },
-              reject: () => {
+              reject: (error: string) => {
+                // todo write error to ssh channel
+                log("ERROR: ", error);
                 reject();
                 connection.end();
               },

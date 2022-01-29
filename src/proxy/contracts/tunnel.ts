@@ -13,7 +13,7 @@ export interface TunnelRequest {
   bindPort: number;
   username: string;
   accept: (address: string, port: number) => void;
-  reject: () => void;
+  reject: (err: string) => void;
 }
 
 export interface Tunnel extends TunnelEventsSource {

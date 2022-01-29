@@ -28,12 +28,10 @@ export class ProxyServer extends EventEmitter {
   }
 
   onTunnelRequest(request: TunnelRequest) {
-    const res = this.requestHandler.handle(request);
-    if (res === false) {
-      return request.reject();
-    }
-
-    request.accept(res.hostname, res.port);
+    const approvedPromise = this.requestHandler.handle(request);
+    approvedPromise
+      .then((res) => request.accept(res.hostname, res.port))
+      .catch((err) => request.reject(err.toString()));
   }
 
   onTunnelOpened(tunnel: Tunnel) {

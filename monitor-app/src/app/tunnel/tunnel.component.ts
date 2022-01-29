@@ -32,7 +32,7 @@ export class TunnelComponent implements OnInit {
   ngOnInit(): void {
     const parser = createHttpParserFromWs(
       new WebSocket(
-        `ws://${window.location.host}/traffic?hostname=${this.hostname}`
+        `wss://${window.location.host}/traffic?hostname=${this.hostname}`
       )
     );
 

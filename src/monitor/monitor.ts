@@ -18,26 +18,22 @@ export class Monitor {
 
     const requestUpgradeHandler = new RequestUpgradeHandler(this.tunnelStorage);
 
-    // app.use(/^\/([a-z0-9.]+\.(js|css|ico))$/, (req, res) => {
-    //   const path = req.params[0];
-    //   res.sendFile(config.monitorApplicationDist + "/" + path);
-    // });
-
     app.use("*", (req, res) => {
+      let publicPath;
       if (req.hostname === config.domainName) {
-        return res.sendFile(path.resolve(__dirname, "./public/index.html"));
+        publicPath = path.resolve(__dirname, `./public`);
+      } else if (req.hostname === config.monitorDomainName) {
+        publicPath = config.monitorApplicationDist;
+      } else {
+        res.statusCode = 404;
+        res.end();
       }
 
-      // Monitor application
-      if (req.hostname === config.monitorDomainName) {
-        const staticMatch = req.originalUrl.match(
-          /^\/[a-z0-9.]+\.(js|css|ico)$/
-        );
-        if (staticMatch) {
-          return res.sendFile(config.monitorApplicationDist + staticMatch[0]);
-        }
-        return res.sendFile(config.monitorApplicationDist + "/index.html");
+      const staticMatch = req.originalUrl.match(/^\/[a-z0-9.]+\.[a-z]{2,4}$/);
+      if (staticMatch) {
+        return res.sendFile(publicPath + staticMatch[0]);
       }
+      return res.sendFile(publicPath + "/index.html");
     });
 
     const server = app.listen(config.monitorPrivatePort, () =>

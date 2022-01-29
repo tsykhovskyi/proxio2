@@ -77,6 +77,7 @@ export class SshServer extends EventEmitter implements SshServerInterface {
 
           session.on("close", () => {
             log("session closed");
+            connection.end();
             return;
           });
         })

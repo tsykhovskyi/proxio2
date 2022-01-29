@@ -1,17 +1,25 @@
-import { Tunnel, TunnelChunk } from "../../../proxy/contracts/tunnel";
+import {
+  Tunnel,
+  TunnelChunk,
+  TunnelConnection,
+} from "../../../proxy/contracts/tunnel";
 import EventEmitter from "events";
+import { TunnelView } from "./tunnel-view";
 
 export declare interface TcpTunnelView {
   on(event: "update", listener: () => void);
 }
 
-export class TcpTunnelView extends EventEmitter {
+export class TcpTunnelView extends EventEmitter implements TunnelView {
+  protected connectionsCnt = 0;
+
   constructor(protected tunnel: Tunnel) {
     super();
 
     this.tunnel.on("connection-chunk", (chunk: TunnelChunk) =>
       this.onConnectionChunk(chunk)
     );
+    this.tunnel.on("connection", (packet) => this.onConnection(packet));
   }
 
   title(): string {
@@ -33,6 +41,7 @@ export class TcpTunnelView extends EventEmitter {
         ]
           .map((s) => s.toString().padEnd(12))
           .join(""),
+      "Connections".padEnd(20) + this.connectionsCnt,
     ];
   }
 
@@ -42,5 +51,11 @@ export class TcpTunnelView extends EventEmitter {
 
   protected emitUpdate(): void {
     this.emit("update");
+  }
+
+  private onConnection(packet: TunnelConnection) {
+    if (packet.state === "open") {
+      this.connectionsCnt++;
+    }
   }
 }

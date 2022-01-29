@@ -4,10 +4,11 @@ import { Terminal, WindowSize } from "./terminal";
 import EventEmitter from "events";
 import { HttpTunnelView } from "./view/http-tunnel-view";
 import { TcpTunnelView } from "./view/tcp-tunnel-view";
+import { TunnelView } from "./view/tunnel-view";
 
 export class Channel extends EventEmitter {
   private terminal: Terminal;
-  private view: TcpTunnelView;
+  private view: TunnelView;
 
   constructor(tunnel: Tunnel, sshChannel: ServerChannel, info: PseudoTtyInfo) {
     super();

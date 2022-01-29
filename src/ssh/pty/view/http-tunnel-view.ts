@@ -1,18 +1,27 @@
-import { TunnelChunk } from "../../../proxy/contracts/tunnel";
+import { Tunnel, TunnelChunk } from "../../../proxy/contracts/tunnel";
 import {
   tunnelHttpsUrl,
   tunnelHttpUrl,
   tunnelMonitorUrl,
 } from "../../../proxy/urls";
-import { TcpTunnelView } from "./tcp-tunnel-view";
 import { ChunkParser } from "./parser/chunk-parser";
+import EventEmitter from "events";
+import { TunnelView } from "./tunnel-view";
 
 export declare interface HttpTunnelView {
   on(event: "update", listener: () => void);
 }
 
-export class HttpTunnelView extends TcpTunnelView {
+export class HttpTunnelView extends EventEmitter implements TunnelView {
   private chunkParser = new ChunkParser(15);
+
+  constructor(protected tunnel: Tunnel) {
+    super();
+
+    this.tunnel.on("connection-chunk", (chunk: TunnelChunk) =>
+      this.onConnectionChunk(chunk)
+    );
+  }
 
   title(): string {
     return `Proxio tunnel: ${this.tunnel.hostname}`;
@@ -59,8 +68,9 @@ export class HttpTunnelView extends TcpTunnelView {
   }
 
   protected onConnectionChunk(chunk: TunnelChunk) {
-    if (this.chunkParser.chunk(chunk)) {
-      this.emitUpdate();
+    const updated = this.chunkParser.chunk(chunk);
+    if (updated) {
+      this.emit("update");
     }
   }
 }

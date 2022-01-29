@@ -59,7 +59,7 @@ export const config = {
   /**
    * Allowed TCP port intervals for user tunnels, separated by comma. Ex. "81-89,1000-1010,2222-9999"
    */
-  proxyAllowedTcpPorts: "1000-9999",
+  proxyAllowedTcpPorts: "2000-6999",
 } as const;
 
 function toInt(v: string | undefined, defaultValue: number) {

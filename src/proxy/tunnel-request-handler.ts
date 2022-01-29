@@ -11,9 +11,13 @@ type AddressRequest = {
 
 export class TunnelRequestHandler {
   private readonly domainName: any;
+  private allowedTcpIntervals: [number, number][];
 
   constructor(private tunnelStorage: TunnelStorage) {
     this.domainName = config.domainName;
+    this.allowedTcpIntervals = config.proxyAllowedTcpPorts
+      .split(",")
+      .map((v) => v.split("-").map((v) => parseInt(v)) as [number, number]);
   }
 
   /**
@@ -23,8 +27,20 @@ export class TunnelRequestHandler {
     request: TunnelRequest
   ): Promise<{ hostname: string; port: number }> {
     if (request.bindPort !== 80) {
-      if (this.tunnelStorage.findTcp(request.bindPort)) {
-        throw new Error(`Port ${request.bindPort} is in use`);
+      const port = request.bindPort;
+
+      // Check if port is in allowed intervals
+      if (
+        !this.allowedTcpIntervals.find(
+          ([start, end]) => port >= start && port <= end
+        )
+      ) {
+        throw new Error(`Port ${port} is not allowed`);
+      }
+
+      // Check if port is already used for tunneling
+      if (this.tunnelStorage.findTcp(port)) {
+        throw new Error(`Port ${port} is in use`);
       }
 
       // double-check if port is free by attempting to open tcp server on it

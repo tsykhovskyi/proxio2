@@ -20,12 +20,12 @@ export const config = {
   /**
    * Path to monitor application static folder.
    */
-  monitorApplicationDist: path.join(
-    __dirname,
-    "../monitor-app/dist/monitor-app"
-  ),
+  monitorApplicationDist:
+    process.env.DIST_MONITOR_APP ??
+    path.join(__dirname, "../monitor-app/dist/monitor-app"),
 
-  frontPageDist: path.join(__dirname, "./monitor/public"),
+  frontPageDist:
+    process.env.DIST_FRONTPAGE ?? path.join(__dirname, "./monitor/public"),
 
   /**
    * SSH server config

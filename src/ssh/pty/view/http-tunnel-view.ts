@@ -38,28 +38,28 @@ export class HttpTunnelView extends EventEmitter implements TunnelView {
       "Http forwarding".padEnd(20) + tunnelHttpUrl(this.tunnel),
       "Https forwarding".padEnd(20) + tunnelHttpsUrl(this.tunnel),
       "Traffic".padEnd(20) +
-      ["Inbound", "Outbound"]
-        .map((s) => this.r.limitedString(s, 12))
-        .join(""),
+        ["Inbound", "Outbound"]
+          .map((s) => this.r.limitedString(s, 12))
+          .join(""),
       "".padEnd(20) +
-      [
-        this.tunnel.statistic.inboundTraffic,
-        this.tunnel.statistic.outboundTraffic,
-      ]
-        .map((s) => this.r.limitedString(this.r.readableBytes(s), 12))
-        .join(""),
+        [
+          this.tunnel.statistic.inboundTraffic,
+          this.tunnel.statistic.outboundTraffic,
+        ]
+          .map((s) => this.r.limitedString(this.r.readableBytes(s), 12))
+          .join(""),
       "",
     ];
 
     const requests = this.chunkParser.requestsInfo();
     if (requests.length) {
-      for (const {request, responseStatus, time} of requests) {
+      for (const { request, responseStatus, time } of requests) {
         lines.push(
           this.r.limitedString(request, 40) +
-          (responseStatus !== ""
-            ? this.r.limitedString(responseStatus, 20) +
-            this.r.readableTime(time)
-            : "")
+            (responseStatus !== ""
+              ? this.r.limitedString(responseStatus, 20) +
+                this.r.readableTime(time)
+              : "")
         );
       }
     } else {

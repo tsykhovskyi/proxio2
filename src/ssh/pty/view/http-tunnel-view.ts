@@ -35,34 +35,35 @@ export class HttpTunnelView extends EventEmitter implements TunnelView {
       "{bold}{green-fg}Proxio{/green-fg}{/bold} by tsykhovskyi",
       "",
       "Web interface: ".padEnd(20) + tunnelMonitorUrl(this.tunnel),
-      "",
       "Http forwarding".padEnd(20) + tunnelHttpUrl(this.tunnel),
       "Https forwarding".padEnd(20) + tunnelHttpsUrl(this.tunnel),
-      "",
-      "",
       "Traffic".padEnd(20) +
-        ["Inbound", "Outbound"]
-          .map((s) => this.r.limitedString(s, 12))
-          .join(""),
+      ["Inbound", "Outbound"]
+        .map((s) => this.r.limitedString(s, 12))
+        .join(""),
       "".padEnd(20) +
-        [
-          this.tunnel.statistic.inboundTraffic,
-          this.tunnel.statistic.outboundTraffic,
-        ]
-          .map((s) => this.r.limitedString(this.r.readableBytes(s), 12))
-          .join(""),
-      "Requests:",
+      [
+        this.tunnel.statistic.inboundTraffic,
+        this.tunnel.statistic.outboundTraffic,
+      ]
+        .map((s) => this.r.limitedString(this.r.readableBytes(s), 12))
+        .join(""),
+      "",
     ];
 
     const requests = this.chunkParser.requestsInfo();
-    for (const { request, responseStatus, time } of requests) {
-      lines.push(
-        this.r.limitedString(request, 40) +
+    if (requests.length) {
+      for (const {request, responseStatus, time} of requests) {
+        lines.push(
+          this.r.limitedString(request, 40) +
           (responseStatus !== ""
             ? this.r.limitedString(responseStatus, 20) +
-              this.r.readableTime(time)
+            this.r.readableTime(time)
             : "")
-      );
+        );
+      }
+    } else {
+      lines.push("{grey-fg}No requests yet...{/grey-fg}");
     }
 
     return lines;

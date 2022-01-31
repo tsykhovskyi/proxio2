@@ -38,7 +38,6 @@ export class TcpTunnelView extends EventEmitter implements TunnelView {
       "TCP forwarding".padEnd(20) +
         `tcp://${config.domainName}:${this.tunnel.port}`,
       "",
-      "",
       "Traffic".padEnd(20) +
         ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join(""),
       "".padEnd(20) +
@@ -48,6 +47,7 @@ export class TcpTunnelView extends EventEmitter implements TunnelView {
         ]
           .map((s) => this.r.limitedString(this.r.readableBytes(s), 12))
           .join(""),
+      "",
       "Connections".padEnd(20) + this.connectionsCnt,
     ];
   }

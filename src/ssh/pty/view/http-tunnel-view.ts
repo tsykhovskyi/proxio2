@@ -37,6 +37,7 @@ export class HttpTunnelView extends EventEmitter implements TunnelView {
       "Web interface: ".padEnd(20) + tunnelMonitorUrl(this.tunnel),
       "Http forwarding".padEnd(20) + tunnelHttpUrl(this.tunnel),
       "Https forwarding".padEnd(20) + tunnelHttpsUrl(this.tunnel),
+      "",
       "Traffic".padEnd(20) +
         ["Inbound", "Outbound"]
           .map((s) => this.r.limitedString(s, 12))

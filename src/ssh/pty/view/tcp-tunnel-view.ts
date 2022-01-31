@@ -5,6 +5,7 @@ import {
 } from "../../../proxy/contracts/tunnel";
 import EventEmitter from "events";
 import { TunnelView } from "./tunnel-view";
+import { config } from "../../../config";
 
 export declare interface TcpTunnelView {
   on(event: "update", listener: () => void);
@@ -30,7 +31,8 @@ export class TcpTunnelView extends EventEmitter implements TunnelView {
     return [
       "{bold}{green-fg}Proxio{/green-fg}{/bold}",
       "",
-      "TCP forwarding".padEnd(20) + `Port: ${this.tunnel.port}`,
+      "TCP forwarding".padEnd(20) +
+        `tcp://${config.domainName}:${this.tunnel.port}`,
       "",
       "Traffic".padEnd(20) +
         ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join(""),

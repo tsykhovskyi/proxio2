@@ -29,6 +29,23 @@ export class TunnelRequestHandler {
     if (request.bindPort !== 80) {
       const port = request.bindPort;
 
+      if (port === 0) {
+        // Assign random port to user
+        let attemptNum = 0;
+        while (attemptNum < 10) {
+          for (const interval of this.allowedTcpIntervals) {
+            const port = Math.round(
+              Math.random() * (interval[1] - interval[0]) + interval[0]
+            );
+            if (!this.tunnelStorage.findTcp(port)) {
+              return { hostname: request.bindAddr, port };
+            }
+            attemptNum++;
+          }
+        }
+        throw new Error("Unable to assign random TCP port to user");
+      }
+
       // Check if port is in allowed intervals
       if (
         !this.allowedTcpIntervals.find(

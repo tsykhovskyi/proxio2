@@ -3,7 +3,7 @@ import { TunnelChunk, TunnelConnection } from "../../proxy/contracts/tunnel";
 /**
  * Offset    Length
  * 0         1 byte    - direction: 0 - incoming, 1 - outgoing
- * 1         8 bytes   - chunk id
+ * 1         8 bytes   - connection id
  * 9         4 bytes   - chunk sequence number
  * 13        4 bytes   - time in ms after connection was opened
  * 17        ...       - chunk payload

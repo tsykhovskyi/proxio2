@@ -6,6 +6,7 @@ import {
 import EventEmitter from "events";
 import { TunnelView } from "./tunnel-view";
 import { config } from "../../../config";
+import { Renderer } from "./utility/renderer";
 
 export declare interface TcpTunnelView {
   on(event: "update", listener: () => void);
@@ -13,9 +14,12 @@ export declare interface TcpTunnelView {
 
 export class TcpTunnelView extends EventEmitter implements TunnelView {
   protected connectionsCnt = 0;
+  private r: Renderer;
 
   constructor(protected tunnel: Tunnel) {
     super();
+
+    this.r = new Renderer();
 
     this.tunnel.on("connection-chunk", (chunk: TunnelChunk) =>
       this.onConnectionChunk(chunk)
@@ -29,10 +33,11 @@ export class TcpTunnelView extends EventEmitter implements TunnelView {
 
   render(): string[] {
     return [
-      "{bold}{green-fg}Proxio{/green-fg}{/bold}",
+      "{bold}{green-fg}Proxio{/green-fg}{/bold} by tsykhovskyi",
       "",
       "TCP forwarding".padEnd(20) +
         `tcp://${config.domainName}:${this.tunnel.port}`,
+      "",
       "",
       "Traffic".padEnd(20) +
         ["Inbound", "Outbound"].map((s) => s.padEnd(12)).join(""),
@@ -41,7 +46,7 @@ export class TcpTunnelView extends EventEmitter implements TunnelView {
           this.tunnel.statistic.inboundTraffic,
           this.tunnel.statistic.outboundTraffic,
         ]
-          .map((s) => s.toString().padEnd(12))
+          .map((s) => this.r.limitedString(this.r.readableBytes(s), 12))
           .join(""),
       "Connections".padEnd(20) + this.connectionsCnt,
     ];

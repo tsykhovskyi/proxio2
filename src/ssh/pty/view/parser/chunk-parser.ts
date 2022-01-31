@@ -1,6 +1,6 @@
 import { TunnelChunk } from "../../../../proxy/contracts/tunnel";
 
-export interface Request {
+interface Request {
   connectionId: string;
   method: string;
   uri: string;
@@ -10,6 +10,12 @@ export interface Request {
     statusMessage: string;
     time: number;
   };
+}
+
+export interface RequestInfo {
+  request: string;
+  responseStatus: string;
+  time: number;
 }
 
 export class ChunkParser {
@@ -41,16 +47,14 @@ export class ChunkParser {
   /**
    * Request method&url, response status code with message, request timing
    */
-  requestsInfo(): [string, string, number][] {
-    return [...this.requests]
-      .reverse()
-      .map((r) => [
-        `[${r.method}] ${r.uri}`,
-        r.response
-          ? `${r.response.statusCode} ${r.response.statusMessage}`
-          : "",
-        r.response ? r.response.time - r.time : 0,
-      ]);
+  requestsInfo(): RequestInfo[] {
+    return [...this.requests].reverse().map((r) => ({
+      request: `[${r.method}] ${r.uri}`,
+      responseStatus: r.response
+        ? `${r.response.statusCode} ${r.response.statusMessage}`
+        : "",
+      time: r.response ? r.response.time - r.time : 0,
+    }));
   }
 
   private applyStartLine(

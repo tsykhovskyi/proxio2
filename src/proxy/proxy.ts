@@ -1,11 +1,14 @@
 import { SshServer, SshServerInterface } from "../ssh/server";
-import { TunnelStorage } from "./tunnel-storage";
 import { ServersController } from "./servers-controller";
 import { Socket } from "net";
 import EventEmitter from "events";
 import { Tunnel, TunnelRequest } from "./contracts/tunnel";
-import { TunnelRequestHandler } from "./tunnel-request-handler";
+import { TunnelRequestHandler } from "./tunnel/request-handler";
+import { TunnelStorage } from "./tunnel/storage";
 
+/**
+ * Facade that handles all traffic, ports, ssh connections
+ */
 export declare interface ProxyServer {
   on(
     event: "tunnel-opened" | "tunnel-closed",

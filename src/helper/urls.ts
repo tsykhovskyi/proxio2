@@ -1,4 +1,4 @@
-import { Tunnel } from "./contracts/tunnel";
+import { Tunnel } from "../proxy/contracts/tunnel";
 import { config } from "../config";
 
 export function tunnelHttpUrl(tunnel: Tunnel) {

@@ -1,5 +1,5 @@
-import { Readable } from "stream";
 import { StringDecoder } from "string_decoder";
+import { Readable } from "stream";
 
 type BufferSearcher<T> = (chunk: string) => T | null;
 

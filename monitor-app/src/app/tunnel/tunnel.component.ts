@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { createHttpParserFromWs } from '../common/traffic';
 import { HttpPacketModel } from './http/http-packet.model';
 import { HttpRequest } from '../common/traffic/http/tunnel-parser';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'tunnel',
@@ -32,7 +33,7 @@ export class TunnelComponent implements OnInit {
   ngOnInit(): void {
     const parser = createHttpParserFromWs(
       new WebSocket(
-        `wss://${window.location.host}/traffic?hostname=${this.hostname}`
+        `${environment.monitorWsUrl}/traffic?hostname=${this.hostname}`
       )
     );
 

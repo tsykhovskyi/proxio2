@@ -1,4 +1,8 @@
-import { emptyResponse, httpProxyNotFoundResponse, mutualPipe } from "./stream";
+import {
+  emptyResponse,
+  httpProxyNotFoundResponse,
+  mutualPipe,
+} from "./tunnel/http-responses";
 import { createServer, Server, Socket } from "net";
 import { hostSearcher } from "./stream/host-searcher";
 import { readablePreProcess } from "./stream/readable-pre-process";
@@ -11,6 +15,9 @@ import { logger } from "../helper/logger";
 
 const log = logger("Proxy SC");
 
+/**
+ * Responsible for open/close tcp ports and definition of http tunnel from traffic payload
+ */
 export declare interface ServersController {
   on(
     event: "http-connection",

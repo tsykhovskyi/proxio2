@@ -1,8 +1,8 @@
-import { TunnelStorage } from "./tunnel-storage";
-import { config } from "../config";
-import { generateAlphaNum } from "../helper/generator";
-import { TunnelRequest } from "./contracts/tunnel";
+import { config } from "../../config";
+import { TunnelRequest } from "../contracts/tunnel";
 import { createServer } from "net";
+import { generateAlphaNum } from "../../helper/generator";
+import { TunnelStorage } from "./storage";
 
 type AddressRequest = {
   subdomain: string;

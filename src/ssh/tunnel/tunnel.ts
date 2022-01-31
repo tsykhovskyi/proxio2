@@ -3,7 +3,7 @@ import { Socket } from "net";
 import {
   mutualPipe,
   remoteHostIsUnreachableResponse,
-} from "../../proxy/stream";
+} from "../../proxy/tunnel/http-responses";
 import { Connection, ServerChannel } from "ssh2";
 import { TunnelStatistic } from "./tunnel-statistic";
 import {

@@ -1,10 +1,9 @@
 import express from "express";
 import { Server } from "http";
-import path from "path";
 import { config } from "../config";
 import { logger } from "../helper/logger";
 import { RequestUpgradeHandler } from "./ws/request-upgrade-handler";
-import { TunnelStorage } from "../proxy/tunnel-storage";
+import { TunnelStorage } from "../proxy/tunnel/storage";
 
 const log = logger("MONITOR");
 

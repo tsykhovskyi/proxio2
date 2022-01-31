@@ -2,10 +2,10 @@ import { IncomingMessage } from "http";
 import { Duplex } from "stream";
 import { WebSocketServer, WebSocket } from "ws";
 import { logger } from "../../helper/logger";
-import { TunnelStorage } from "../../proxy/tunnel-storage";
 import { encodeTunnelChunk, encodeTunnelConnection } from "./encoders";
 import { config } from "../../config";
 import { Tunnel } from "../../proxy/contracts/tunnel";
+import { TunnelStorage } from "../../proxy/tunnel/storage";
 
 const log = logger("MONITOR_WS");
 

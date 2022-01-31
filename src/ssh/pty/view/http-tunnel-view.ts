@@ -3,7 +3,7 @@ import {
   tunnelHttpsUrl,
   tunnelHttpUrl,
   tunnelMonitorUrl,
-} from "../../../proxy/urls";
+} from "../../../helper/urls";
 import { ChunkParser } from "./parser/chunk-parser";
 import EventEmitter from "events";
 import { TunnelView } from "./tunnel-view";

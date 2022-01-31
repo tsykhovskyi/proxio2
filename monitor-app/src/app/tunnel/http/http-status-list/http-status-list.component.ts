@@ -4,7 +4,12 @@ import { HttpPacketModel } from '../http-packet.model';
 @Component({
   selector: 'http-status-list',
   template: `
-    <table class="table table-borderless">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <th><span>Request</span></th>
+        <th><span>Status</span></th>
+        <th><span>Time</span></th>
+      </thead>
       <tbody>
         <tr
           *ngFor="let packet of packets"
@@ -35,6 +40,10 @@ import { HttpPacketModel } from '../http-packet.model';
     `
       tr {
         cursor: pointer;
+
+        td:last-child {
+          min-width: 80px;
+        }
       }
     `,
   ],

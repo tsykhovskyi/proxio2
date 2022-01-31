@@ -5,6 +5,7 @@
 export const environment = {
   production: false,
   monitorWsUrl: 'wss://monitor.localhost',
+  domainName: 'localhost',
 };
 
 /*

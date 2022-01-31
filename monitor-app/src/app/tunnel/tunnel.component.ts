@@ -7,22 +7,35 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'tunnel',
   template: `
-    <div class="row">
-      <div class="col-4">
+    <p class="fs-4 mt-2">
+      Traffic monitor: <i>{{ tunnelHost }}</i>
+    </p>
+
+    <div class="row" *ngIf="packets.length">
+      <div class="col-6">
         <http-status-list
           [packets]="packets"
           (onSelectPacket)="activePacket = $event"
         ></http-status-list>
       </div>
-      <div class="col-8">
+      <div class="col-6">
         <http-preview [packet]="activePacket"></http-preview>
       </div>
+    </div>
+    <div class="alert alert-primary" role="alert" *ngIf="!packets.length">
+      Your requests will be shown here. Keep in mind, that <b>proxio</b> does
+      not store any traffic and all preview requests will be flushed on page
+      reload
     </div>
   `,
   styleUrls: ['./tunnel.component.scss'],
 })
 export class TunnelComponent implements OnInit {
   @Input() hostname!: string;
+
+  get tunnelHost() {
+    return `${this.hostname}.${environment.domainName}`;
+  }
 
   activePacket: HttpPacketModel | null = null;
 

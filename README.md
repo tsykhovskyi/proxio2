@@ -19,6 +19,8 @@ The host SSH key fingerprint is `SHA256:igPkNM9z0QvpyB3JF5KFPIppREZYNCDhwo+hZUiD
 
 HTTP tunnel opens only on 80 and 443 ports and has monitoring web utility to analyze your HTTP requests.
 
+![image](src/monitor/public/img3.png)
+
 ### Server subdomain assignment
 
 If no particular subdomain was requested, proxio will suggest it based on SSH client username
@@ -38,6 +40,8 @@ or authenticate with a username that matches your subdomain
 `ssh -R 80:localhost:3000 john-doe@proxio.me`
 
 ## TCP forwarding
+
+![image](src/monitor/public/img4.png)
 
 TCP can be opened on any free port from the range 2000-6999.
 

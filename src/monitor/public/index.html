@@ -12,112 +12,115 @@
     <title>proxio - make your localhost public</title>
 </head>
 <body>
+
 <header class="site-header sticky-top py-1">
     <nav class="container d-flex flex-column flex-md-row justify-content-between">
-        <a class="py-2 d-none d-md-inline-block" href="/">Proxio.me</a>
-        <!--        <a class="py-2 d-none d-md-inline-block" href="#">Github</a>-->
+        <a class="py-2 d-none d-inline-block" href="/">Proxio.me</a>
+        <a class="py-2 d-inline-block" href="https://github.com/tsykhovskyi/proxio2">Github</a>
     </nav>
-    <main>
-        <div class="position-relative overflow-hidden p-3 p-md-5 m-md-3 text-center bg-light">
-            <div class="col-md-5 p-lg-5 mx-auto my-5">
-                <h1 class="display-4 fw-normal">Proxio</h1>
-                <p class="lead fw-normal">Make your localhost public</p>
-            </div>
-            <div class="product-device shadow-sm d-none d-md-block"></div>
-            <div class="product-device product-device-2 shadow-sm d-none d-md-block"></div>
-        </div>
-
-        <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
-            <div class="bg-dark me-md-3 pt-3 px-3 pt-md-5 px-md-5 text-center text-white overflow-hidden">
-                <div class="my-3 py-3">
-                    <h2 class="display-5">How does it work?</h2>
-                </div>
-                <div>
-                    <p>Proxio is an SSH server just for remote port forwarding. When a user connects to Proxio,
-                        they get a public URL that anybody can use to connect to their localhost server.
-                    </p>
-                    <p>Basic use <b><i>ssh -R 80:localhost:3000 proxio.me</i></b> The -R option instructs your SSH
-                        client to request
-                        port forwarding from the server and proxy requests to the specified host and port (usually
-                        localhost). A subdomain of proxio.me will be assigned to forward HTTP traffic.</p>
-                </div>
-                <img src="./img1.png" class="img-fluid my-3" alt="">
-
-            </div>
-        </div>
-
-        <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
-            <div class="bg-light me-md-3 pt-3 px-3 pt-md-5 px-md-5 overflow-hidden">
-                <div class="row">
-                    <div class="col-6">
-                        <h2 class="display-5">Http forwarding</h2>
-                        <p class="lead"><kbd>ssh -R 80:localhost:3000 proxio.me</kbd></p>
-                        <p>If no particular subdomain was requested, proxio will suggest it based on SSH client
-                            username</p>
-                        <p><kbd>ssh -R 80:localhost:3000 proxio.me</kbd> -> <span class="text-decoration-underline">https://john-doe.proxio.me</span>
-                        </p>
-                        <p>You can also request for a specific subdomain if it is available. You can do this in on eof
-                            the following ways</p>
-                        <p><kbd>ssh -R john-doe.proxio.me:80:localhost:3000 proxio.me</kbd></p>
-                        <p><kbd>ssh -R 80:localhost:3000 john-doe@proxio.me</kbd></p>
-                    </div>
-                    <div class="col-md-6">
-                        <img src="img3.png" alt="" class="img-fluid">
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
-            <div class="bg-light me-md-3 pt-3 px-3 pt-md-5 px-md-5 overflow-hidden">
-                <div class="row">
-                    <div class="col-6">
-                        <img src="img4.png" alt="" class="img-fluid">
-                    </div>
-                    <div class="col-md-6">
-                        <h2 class="display-5">Tcp forwarding</h2>
-                        <p class="lead">Type <kbd>ssh -R 0:localhost:3000 proxio.me</kbd> to request one of free TCP
-                            ports from the server.</p>
-                        <p>If you want specific TCP port, then provide it in request <kbd>ssh -R 2345:localhost:3000
-                            proxio.me</kbd></p>
-                        <p>Only ports in range <i>2000-6999</i> are available to be served for TCP tunnels.</p>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
-            <div class="bg-light me-md-3 pt-3 px-3 pt-md-5 px-md-5 overflow-hidden">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h2 class="display-5">Monitor traffic inspector</h2>
-                        <p class="text-left">Proxio currently supports preview feature for HTML, JSON, images requests.
-                            It also has brief timing statistics about request.</p>
-                    </div>
-                    <div class="col-md-6">
-                        <img class="img-fluid" src="img2.png">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <footer class="container py-5">
-        <div class="row">
-            <div class="6 col-md">
-                <small class="d-block text-muted">© 2022</small>
-            </div>
-            <div class="col-6 col-md">
-                <ul class="list-unstyled text-small">
-                    <li><span class="text-muted">Developed by </span><a target="_blank" class="text-muted link-muted"
-                                                                        href="https://www.linkedin.com/in/ihor-tsykhovskyi">Ihor
-                        Tsykhovskyi</a></li>
-                </ul>
-            </div>
-        </div>
-    </footer>
 </header>
+
+<main>
+    <div class="position-relative overflow-hidden p-3 p-md-5 m-md-3 text-center bg-light">
+        <div class="col-md-5 p-lg-5 mx-auto my-5">
+            <h1 class="display-4 fw-normal">Proxio</h1>
+            <p class="lead fw-normal">Make your localhost public</p>
+        </div>
+        <div class="product-device shadow-sm d-none d-md-block"></div>
+        <div class="product-device product-device-2 shadow-sm d-none d-md-block"></div>
+    </div>
+
+    <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
+        <div class="bg-dark me-md-3 pt-3 px-3 pt-md-5 px-md-5 text-center text-white overflow-hidden">
+            <div class="my-3 py-3">
+                <h2 class="display-5">How does it work?</h2>
+            </div>
+            <div>
+                <p>Proxio is an SSH server just for remote port forwarding. When a user connects to Proxio,
+                    they get a public URL that anybody can use to connect to their localhost server.
+                </p>
+                <p>Basic use <b><i>ssh -R 80:localhost:3000 proxio.me</i></b> The -R option instructs your SSH
+                    client to request
+                    port forwarding from the server and proxy requests to the specified host and port (usually
+                    localhost). A subdomain of proxio.me will be assigned to forward HTTP traffic.</p>
+                <p>The host SSH key fingerprint is <u>SHA256:igPkNM9z0QvpyB3JF5KFPIppREZYNCDhwo+hZUiD4bQ</u></p>
+            </div>
+            <img src="./img1.png" class="img-fluid my-3" alt="">
+
+        </div>
+    </div>
+
+    <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
+        <div class="bg-light me-md-3 pt-3 px-3 pt-md-5 px-md-5 overflow-hidden">
+            <div class="row">
+                <div class="col-md-6">
+                    <h2 class="display-5">Http forwarding</h2>
+                    <p class="lead"><kbd>ssh -R 80:localhost:3000 proxio.me</kbd></p>
+                    <p>If no particular subdomain was requested, proxio will suggest it based on SSH client
+                        username</p>
+                    <p><kbd>ssh -R 80:localhost:3000 proxio.me</kbd> -> <span class="text-decoration-underline">https://john-doe.proxio.me</span>
+                    </p>
+                    <p>You can also request for a specific subdomain if it is available. You can do this in on eof
+                        the following ways</p>
+                    <p><kbd>ssh -R john-doe.proxio.me:80:localhost:3000 proxio.me</kbd></p>
+                    <p><kbd>ssh -R 80:localhost:3000 john-doe@proxio.me</kbd></p>
+                </div>
+                <div class="col-md-6">
+                    <img src="img3.png" alt="" class="img-fluid">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
+        <div class="bg-light me-md-3 pt-3 px-3 pt-md-5 px-md-5 overflow-hidden">
+            <div class="row">
+                <div class="col-md-6">
+                    <img src="img4.png" alt="" class="img-fluid">
+                </div>
+                <div class="col-md-6">
+                    <h2 class="display-5">Tcp forwarding</h2>
+                    <p class="lead">Type <kbd>ssh -R 0:localhost:3000 proxio.me</kbd> to request one of free TCP
+                        ports from the server.</p>
+                    <p>If you want specific TCP port, then provide it in request <kbd>ssh -R 2345:localhost:3000
+                        proxio.me</kbd></p>
+                    <p>Only ports in range <i>2000-6999</i> are available to be served for TCP tunnels.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
+        <div class="bg-light me-md-3 pt-3 px-3 pt-md-5 px-md-5 overflow-hidden">
+            <div class="row">
+                <div class="col-md-6">
+                    <h2 class="display-5">Monitor traffic inspector</h2>
+                    <p class="text-left">Proxio currently supports preview feature for HTML, JSON, images requests.
+                        It also has brief timing statistics about request.</p>
+                </div>
+                <div class="col-md-6">
+                    <img class="img-fluid" src="img2.png">
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="container py-5">
+    <div class="row">
+        <div class="6 col-md">
+            <small class="d-block text-muted">© 2022</small>
+        </div>
+        <div class="col-6 col-md">
+            <ul class="list-unstyled text-small">
+                <li><span class="text-muted">Developed by </span><a target="_blank" class="text-muted link-muted"
+                                                                    href="https://www.linkedin.com/in/ihor-tsykhovskyi">Ihor
+                    Tsykhovskyi</a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
 </body>
 </html>
